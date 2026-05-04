@@ -3,9 +3,12 @@ from __future__ import annotations
 import logging
 import os
 
+from dotenv import load_dotenv
 from anthropic import AsyncAnthropic
 
 from bot.services.search_service import search_service
+
+load_dotenv(override=True)
 
 logger = logging.getLogger(__name__)
 

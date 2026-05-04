@@ -6,7 +6,7 @@ import sys
 
 from dotenv import load_dotenv
 
-load_dotenv()
+load_dotenv(override=True)
 
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 WEBHOOK_URL = os.getenv("WEBHOOK_URL")

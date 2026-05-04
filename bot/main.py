@@ -5,20 +5,17 @@ import logging
 import sys
 import hashlib
 import hmac
-from pathlib import Path
 
 from aiohttp import web
 from aiogram import Bot, Dispatcher
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 from aiogram.webhook.aiohttp_server import SimpleRequestHandler
-from aiogram.types import Update
 
 from bot.config import (
     BOT_TOKEN,
     WEBHOOK_URL,
     WEBHOOK_PATH,
-    WEBHOOK_SECRET,
     HOST,
     PORT,
 )

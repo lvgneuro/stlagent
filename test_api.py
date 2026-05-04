@@ -4,9 +4,9 @@ import asyncio
 import os
 from dotenv import load_dotenv
 
-load_dotenv()
-
 from anthropic import AsyncAnthropic
+
+load_dotenv()
 
 
 async def main():
