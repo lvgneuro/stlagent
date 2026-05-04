@@ -145,11 +145,8 @@ class AIService:
                     
                     messages.append({"role": "assistant", "content": content_blocks})
                     messages.append({
-                        "role": "user",
-                        "tool_results": [{
-                            "tool_use_id": tool_use.id,
-                            "content": result
-                        }]
+                        "role": "user", 
+                        "content": f"Вот результат поиска: {result[:500]}"
                     })
 
                     response = await self._client.beta.messages.create(
