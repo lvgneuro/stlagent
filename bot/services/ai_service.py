@@ -76,8 +76,7 @@ class AIService:
                     messages.append({"role": "assistant", "content": response.content})
                     messages.append({
                         "role": "user",
-                        "content": [{
-                            "type": "tool_result",
+                        "tool_results": [{
                             "tool_use_id": tool_use.id,
                             "content": result
                         }]
@@ -88,7 +87,6 @@ class AIService:
                         max_tokens=1024,
                         system=SYSTEM_PROMPT,
                         messages=messages,
-                        tools=[WEB_SEARCH_TOOL],  # type: ignore[list-item]
                     )
 
             for block in response.content:
