@@ -37,7 +37,6 @@ def verify_signature(body: bytes, secret: str, signature: str) -> bool:
 
 
 async def on_startup(bot: Bot) -> None:
-    print(f"STARTUP: WEBHOOK_URL={WEBHOOK_URL}", file=sys.stderr)
     if not WEBHOOK_URL:
         raise ValueError("WEBHOOK_URL is not set in .env")
     await bot.set_webhook(WEBHOOK_URL)

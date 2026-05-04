@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import logging
 import os
-import sys
 
 from anthropic import AsyncAnthropic
 
@@ -67,16 +66,13 @@ class AIService:
                 tools=[WEB_SEARCH_TOOL],  # type: ignore[list-item]
             )
 
-            print(f"DEBUG: stop_reason={response.stop_reason}", file=sys.stderr)
             logger.info(f"Response stop_reason: {response.stop_reason}")
-            logger.info(f"Response content: {response.content}")
             
             if response.stop_reason == "tool_use":
                 tool_use = next((c for c in response.content if c.type == "tool_use"), None)
                 if tool_use:
                     logger.info(f"Claude calling tool: {tool_use.name}")
                     result = search_service.search(str(tool_use.input.get("query", "")))
-                    logger.info(f"Search result: {result[:200]}...")
 
                     messages.append({"role": "assistant", "content": [{"type": block.type, "text": getattr(block, "text", "")} for block in response.content]})
                     messages.append({

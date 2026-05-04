@@ -28,7 +28,6 @@ async def ai_handler(message: Message) -> None:
     username = message.from_user.username if message.from_user else None
     first_name = message.from_user.first_name if message.from_user else None
 
-    print(f"DEBUG: got message: {message.text}", file=__import__('sys').stderr)
     logger.info(f"Got message: {message.text[:50] if message.text else 'empty'}")
     user_text = message.text or ""
 
