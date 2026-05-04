@@ -4,6 +4,8 @@ import logging
 import os
 import sys
 
+logger = logging.getLogger(__name__)
+
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 logger.info(f"Available env keys: {list(os.environ.keys())}")
 logger.info(f"BOT_TOKEN present: {bool(BOT_TOKEN)}")
@@ -17,5 +19,3 @@ if not BOT_TOKEN:
     print(f"DEBUG: BOT_TOKEN env var = '{BOT_TOKEN}'", file=sys.stderr)
     print(f"DEBUG: All env vars with TOKEN: {[k for k in os.environ.keys() if 'TOKEN' in k]}", file=sys.stderr)
     raise ValueError("BOT_TOKEN not found in .env file")
-
-logger = logging.getLogger(__name__)
