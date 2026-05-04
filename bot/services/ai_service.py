@@ -45,8 +45,9 @@ SYSTEM_PROMPT = """Ты — дружелюбный помощник. Всегд�
 class AIService:
     def __init__(self) -> None:
         api_key = os.getenv("ANTHROPIC_API_KEY")
+        logger.info(f"ENV keys: {[k for k in os.environ.keys() if 'ANTHROP' in k.upper()]}")
         if not api_key:
-            raise ValueError("ANTHROPIC_API_KEY not found in .env file")
+            raise ValueError("ANTHROPIC_API_KEY not found")
         self._client = AsyncAnthropic(api_key=api_key)
 
     async def get_response(self, user_message: str, conversation_history: list | None = None) -> str:
