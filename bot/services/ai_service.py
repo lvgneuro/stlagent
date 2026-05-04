@@ -73,7 +73,7 @@ class AIService:
                     logger.info(f"Claude calling tool: {tool_use.name}")
                     result = search_service.search(str(tool_use.input.get("query", "")))
 
-                    messages.append({"role": "assistant", "content": response.content})
+                    messages.append({"role": "assistant", "content": [{"type": block.type, "text": getattr(block, "text", "")} for block in response.content]})
                     messages.append({
                         "role": "user",
                         "tool_results": [{
@@ -88,13 +88,11 @@ class AIService:
                         system=SYSTEM_PROMPT,
                         messages=messages,
                     )
-
-            for block in response.content:
-                if hasattr(block, "text"):
-                    text = block.text
-                    logger.info(f"Claude response: {text[:50]}...")
-                    return text
-            return "Не удалось получить ответ"
+            else:
+                for block in response.content:
+                    if hasattr(block, "text"):
+                        return block.text
+                return "Не удалось получить ответ"
         except Exception as e:
             logger.error(f"Error getting AI response: {e}", exc_info=True)
             return f"Sorry, I'm having trouble answering right now. ({type(e).__name__}: {e})"
