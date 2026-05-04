@@ -5,6 +5,8 @@ import os
 import sys
 
 BOT_TOKEN = os.getenv("BOT_TOKEN")
+logger.info(f"Available env keys: {list(os.environ.keys())}")
+logger.info(f"BOT_TOKEN present: {bool(BOT_TOKEN)}")
 WEBHOOK_URL = os.getenv("WEBHOOK_URL")
 WEBHOOK_PATH = os.getenv("WEBHOOK_PATH", "/webhook")
 WEBHOOK_SECRET = os.getenv("WEBHOOK_SECRET", "secret_token")
