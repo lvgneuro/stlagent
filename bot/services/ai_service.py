@@ -7,7 +7,6 @@ import os
 from anthropic import AsyncAnthropic
 
 from bot.database import db
-from bot.services.search_service import search_service
 
 logger = logging.getLogger(__name__)
 
@@ -88,7 +87,9 @@ class AIService:
             return "⚠️ Бот не настроен: отсутствует ANTHROPIC_API_KEY"
         
         if user_id:
+            logger.info(f"Fetching facts for user_id={user_id}")
             user_facts = await db.get_user_facts(user_id)
+            logger.info(f"User facts from DB: {user_facts}")
             context_messages = await db.search_context(user_id, user_message)
             
             context_parts = []
@@ -105,7 +106,8 @@ class AIService:
             search_result = ""
             if needs_search:
                 try:
-                    search_result = search_service.search(user_message)
+                    from bot.services.search_service import search_service as ss
+                    search_result = ss.search(user_message)
                     logger.info(f"Search result: {search_result[:200]}...")
                 except Exception as e:
                     logger.warning(f"Search failed: {e}")
