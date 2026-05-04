@@ -55,8 +55,7 @@ class AIService:
         if not self._client:
             return "⚠️ Бот не настроен: отсутствует ANTHROPIC_API_KEY"
         
-        messages: list = list(conversation_history) if conversation_history else []
-        messages.append({"role": "user", "content": user_message})
+        messages = [{"role": "user", "content": user_message}]
 
         try:
             logger.info(f"Sending message to Claude: {user_message[:50]}...")
