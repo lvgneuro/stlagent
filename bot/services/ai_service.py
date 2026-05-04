@@ -7,7 +7,6 @@ import os
 from anthropic import AsyncAnthropic
 
 from bot.database import db
-from bot.services.search_service import search_service
 
 logger = logging.getLogger(__name__)
 
@@ -118,41 +117,10 @@ class AIService:
                 max_tokens=1024,
                 system=system_with_context,
                 messages=messages,
-                tools=[WEB_SEARCH_TOOL],  # type: ignore[list-item]
             )
 
             logger.info(f"Response stop_reason: {response.stop_reason}")
             
-            if response.stop_reason == "tool_use":
-                tool_use = next((c for c in response.content if c.type == "tool_use"), None)
-                if tool_use:
-                    logger.info(f"Claude calling tool: {tool_use.name}")
-                    result = search_service.search(str(tool_use.input.get("query", "")))
-
-                    content_blocks = []
-                    for block in response.content:
-                        block_dict = {"type": block.type}
-                        if block.type == "text":
-                            block_dict["text"] = block.text
-                        elif block.type == "tool_use":
-                            block_dict["id"] = block.id
-                            block_dict["name"] = block.name
-                            block_dict["input"] = block.input
-                        content_blocks.append(block_dict)
-                    
-                    messages.append({"role": "assistant", "content": content_blocks})
-                    messages.append({
-                        "role": "user", 
-                        "content": f"Вот результат поиска: {result[:500]}"
-                    })
-
-                    response = await self._client.beta.messages.create(
-                        model="claude-sonnet-4-6",
-                        max_tokens=1024,
-                        system=system_with_context,
-                        messages=messages,
-                    )
-                    
             text = None
             for block in response.content:
                 if hasattr(block, "text"):
