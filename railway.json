@@ -1,0 +1,14 @@
+[project]
+name = "tg-echo-bot"
+
+[build]
+  builder = "nixpacks"
+  buildCommand = "pip install uv && uv sync"
+  runCommand = "python -m bot.main"
+
+[runtime]
+  language = "python"
+
+[[ports]]
+  port = 8080
+  # Railway injects PORT env var
