@@ -95,11 +95,18 @@ class AIService:
                     
                     logger.info(f"Second response stop_reason: {response.stop_reason}")
                     logger.info(f"Second response content: {response.content}")
-            else:
-                for block in response.content:
-                    if hasattr(block, "text"):
-                        return block.text
-                return "Не удалось получить ответ"
+                    
+            for block in response.content:
+                logger.info(f"Block: {block}, type: {type(block)}, attrs: {dir(block)}")
+                if hasattr(block, "text"):
+                    logger.info(f"Found text: {block.text}")
+                    return block.text
+            for block in response.content:
+                logger.info(f"Block: {block}, type: {type(block)}, attrs: {dir(block)}")
+                if hasattr(block, "text"):
+                    logger.info(f"Found text: {block.text}")
+                    return block.text
+            return "Не удалось получить ответ"
         except Exception as e:
             logger.error(f"Error getting AI response: {e}", exc_info=True)
             return f"Sorry, I'm having trouble answering right now. ({type(e).__name__}: {e})"
