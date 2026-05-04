@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 import os
+import sys
 
 from dotenv import load_dotenv
 
@@ -15,6 +16,8 @@ HOST = os.getenv("HOST", "0.0.0.0")
 PORT = int(os.getenv("PORT", "8080"))
 
 if not BOT_TOKEN:
+    print(f"DEBUG: BOT_TOKEN env var = '{BOT_TOKEN}'", file=sys.stderr)
+    print(f"DEBUG: All env vars: {list(os.environ.keys())}", file=sys.stderr)
     raise ValueError("BOT_TOKEN not found in .env file")
 
 logger = logging.getLogger(__name__)
