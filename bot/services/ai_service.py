@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 import os
+import sys
 
 from anthropic import AsyncAnthropic
 
@@ -67,6 +68,7 @@ class AIService:
                 tools=[WEB_SEARCH_TOOL],  # type: ignore[list-item]
             )
 
+            print(f"DEBUG: stop_reason={response.stop_reason}", file=sys.stderr)
             logger.info(f"Response stop_reason: {response.stop_reason}")
             logger.info(f"Response content: {response.content}")
             
