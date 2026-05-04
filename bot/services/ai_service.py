@@ -7,6 +7,7 @@ import os
 from anthropic import AsyncAnthropic
 
 from bot.database import db
+from bot.services import search_service
 
 logger = logging.getLogger(__name__)
 
@@ -97,7 +98,21 @@ class AIService:
             if context_messages:
                 context_parts.append("Из прошлых разговоров:\n" + "\n".join(f"- {m[:150]}" for m in context_messages[-3:]))
             
+            search_indicators = ["погода", "новости", "что new", "сегодня", "сейчас", "2024", "2025", "2026", "курс", "цена", "кто такой", "что такое"]
+            needs_search = any(word in user_message.lower() for word in search_indicators)
+            
+            search_result = ""
+            if needs_search:
+                try:
+                    search_result = search_service.search(user_message)
+                    logger.info(f"Search result: {search_result[:200]}...")
+                except Exception as e:
+                    logger.warning(f"Search failed: {e}")
+            
             system_with_context = SYSTEM_PROMPT
+            if search_result:
+                system_with_context += f"\n\nАктуальная информация из интернета:\n{search_result[:1500]}"
+            
             if context_parts:
                 system_with_context += "\n\n" + CONTEXT_PROMPT.format(
                     facts=context_parts[0] if len(context_parts) > 0 else "Нет данных",
