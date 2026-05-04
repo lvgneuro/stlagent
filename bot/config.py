@@ -4,10 +4,6 @@ import logging
 import os
 import sys
 
-from dotenv import load_dotenv
-
-load_dotenv(override=True)
-
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 WEBHOOK_URL = os.getenv("WEBHOOK_URL")
 WEBHOOK_PATH = os.getenv("WEBHOOK_PATH", "/webhook")
