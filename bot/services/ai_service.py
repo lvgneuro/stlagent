@@ -131,7 +131,18 @@ class AIService:
                     logger.info(f"Claude calling tool: {tool_use.name}")
                     result = search_service.search(str(tool_use.input.get("query", "")))
 
-                    messages.append({"role": "assistant", "content": [{"type": block.type, "text": getattr(block, "text", "")} for block in response.content]})
+                    content_blocks = []
+                    for block in response.content:
+                        block_dict = {"type": block.type}
+                        if block.type == "text":
+                            block_dict["text"] = block.text
+                        elif block.type == "tool_use":
+                            block_dict["id"] = block.id
+                            block_dict["name"] = block.name
+                            block_dict["input"] = block.input
+                        content_blocks.append(block_dict)
+                    
+                    messages.append({"role": "assistant", "content": content_blocks})
                     messages.append({
                         "role": "user",
                         "tool_results": [{
