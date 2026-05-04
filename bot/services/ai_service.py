@@ -91,27 +91,28 @@ class AIService:
             user_facts = await db.get_user_facts(user_id)
             context_messages = await db.search_context(user_id, user_message)
             
-            context_str = ""
+            context_parts = []
             if user_facts:
-                context_str += "Факты о пользователе:\n"
-                for fact_type, fact_value in user_facts.items():
-                    context_str += f"- {fact_type}: {fact_value}\n"
+                context_parts.append("Факты о пользователе:\n" + "\n".join(f"- {k}: {v}" for k, v in user_facts.items()))
             
             if context_messages:
-                context_str += "\nИз прошлых разговоров:\n"
-                for msg in context_messages[-3:]:
-                    context_str += msg[:200] + "...\n"
+                context_parts.append("Из прошлых разговоров:\n" + "\n".join(f"- {m[:150]}" for m in context_messages[-3:]))
             
             system_with_context = SYSTEM_PROMPT
-            if context_str:
+            if context_parts:
                 system_with_context += "\n\n" + CONTEXT_PROMPT.format(
-                    facts="\n".join(f"- {k}: {v}" for k, v in user_facts.items()) if user_facts else "Нет данных",
-                    context="\n".join(context_messages[-3:]) if context_messages else "Нет данных"
+                    facts=context_parts[0] if len(context_parts) > 0 else "Нет данных",
+                    context=context_parts[1] if len(context_parts) > 1 else "Нет данных"
                 )
+            
+            logger.info(f"User facts: {user_facts}, context: {len(context_messages)} messages")
         else:
             system_with_context = SYSTEM_PROMPT
         
-        messages = [{"role": "user", "content": user_message}]
+        messages = []
+        if conversation_history:
+            messages.extend(conversation_history[-6:])
+        messages.append({"role": "user", "content": user_message})
 
         try:
             logger.info(f"Sending message to Claude: {user_message[:50]}...")
@@ -173,6 +174,7 @@ class AIService:
             return f"Sorry, I'm having trouble answering right now. ({type(e).__name__}: {e})"
 
     async def _extract_and_save_facts(self, user_message: str, bot_response: str, user_id: int) -> None:
+        logger.info(f"Extracting facts for user {user_id}: {user_message[:50]}...")
         try:
             extraction_prompt = f"""{FACT_EXTRACTION_PROMPT}
 
@@ -187,6 +189,7 @@ class AIService:
             )
 
             text = response.content[0].text if response.content else ""
+            logger.info(f"Extracted text: {text[:200]}...")
             
             if text.startswith("```json"):
                 text = text[7:]
@@ -197,6 +200,7 @@ class AIService:
             
             try:
                 facts = json.loads(text.strip())
+                logger.info(f"Parsed facts: {facts}")
                 if isinstance(facts, list):
                     for fact in facts:
                         if "fact_type" in fact and "fact_value" in fact:
