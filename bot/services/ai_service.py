@@ -2,9 +2,6 @@ from __future__ import annotations
 
 import logging
 import os
-import sys
-
-print(f"ai_service.py loaded, ENV: {list(os.environ.keys())[:5]}", file=sys.stderr)
 
 from anthropic import AsyncAnthropic
 
@@ -47,16 +44,16 @@ SYSTEM_PROMPT = """Ты — дружелюбный помощник. Всегд�
 
 class AIService:
     def __init__(self) -> None:
-        import sys
-        all_keys = list(os.environ.keys())
-        print(f"ALL ENV KEYS: {all_keys}", file=sys.stderr)
         api_key = os.getenv("ANTHROPIC_API_KEY")
-        print(f"API KEY PRESENT: {bool(api_key)}", file=sys.stderr)
-        if not api_key:
-            raise ValueError("ANTHROPIC_API_KEY not found")
-        self._client = AsyncAnthropic(api_key=api_key)
+        self._client = AsyncAnthropic(api_key=api_key) if api_key else None
+
+    def is_configured(self) -> bool:
+        return self._client is not None
 
     async def get_response(self, user_message: str, conversation_history: list | None = None) -> str:
+        if not self._client:
+            return "⚠️ Бот не настроен: отсутствует ANTHROPIC_API_KEY"
+        
         messages: list = list(conversation_history) if conversation_history else []
         messages.append({"role": "user", "content": user_message})
 
