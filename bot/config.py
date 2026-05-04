@@ -7,9 +7,7 @@ import sys
 logger = logging.getLogger(__name__)
 
 BOT_TOKEN = os.getenv("BOT_TOKEN")
-logger.info(f"Available env keys: {list(os.environ.keys())}")
-logger.info(f"BOT_TOKEN present: {bool(BOT_TOKEN)}")
-WEBHOOK_URL = os.getenv("WEBHOOK_URL") or os.getenv("RENDER_EXTERNAL_URL", "https://stlagent-5qrr.onrender.com")
+WEBHOOK_URL = os.getenv("WEBHOOK_URL") or os.getenv("RENDER_EXTERNAL_URL") or "https://stlagent-5qrr.onrender.com"
 WEBHOOK_PATH = os.getenv("WEBHOOK_PATH", "/webhook")
 WEBHOOK_SECRET = os.getenv("WEBHOOK_SECRET", "secret_token")
 HOST = os.getenv("HOST", "0.0.0.0")
