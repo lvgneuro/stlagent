@@ -2,6 +2,9 @@ from __future__ import annotations
 
 import logging
 import os
+import sys
+
+print(f"ai_service.py loaded, ENV: {list(os.environ.keys())[:5]}", file=sys.stderr)
 
 from anthropic import AsyncAnthropic
 
