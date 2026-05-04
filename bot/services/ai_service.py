@@ -109,10 +109,7 @@ class AIService:
         else:
             system_with_context = SYSTEM_PROMPT
         
-        messages = []
-        if conversation_history:
-            messages.extend(conversation_history[-6:])
-        messages.append({"role": "user", "content": user_message})
+        messages = [{"role": "user", "content": user_message}]
 
         try:
             logger.info(f"Sending message to Claude: {user_message[:50]}...")
