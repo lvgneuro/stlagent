@@ -87,9 +87,7 @@ class AIService:
             return "⚠️ Бот не настроен: отсутствует ANTHROPIC_API_KEY"
         
         if user_id:
-            logger.info(f"Fetching facts for user_id={user_id}")
             user_facts = await db.get_user_facts(user_id)
-            logger.info(f"User facts from DB: {user_facts}")
             context_messages = await db.search_context(user_id, user_message)
             
             context_parts = []
@@ -101,7 +99,6 @@ class AIService:
             
             search_indicators = ["погода", "новости", "что new", "сегодня", "сейчас", "2024", "2025", "2026", "курс", "цена", "кто такой", "что такое", "найти", "узнать"]
             needs_search = any(word in user_message.lower() for word in search_indicators)
-            logger.info(f"Message: {user_message}, needs_search: {needs_search}")
             
             search_result = ""
             if needs_search:
@@ -154,7 +151,7 @@ class AIService:
             return f"Sorry, I'm having trouble answering right now. ({type(e).__name__}: {e})"
 
     async def _extract_and_save_facts(self, user_message: str, bot_response: str, user_id: int) -> None:
-        logger.info(f"Extracting facts for user {user_id}: {user_message[:50]}...")
+        logger.debug(f"Extracting facts for user {user_id}: {user_message[:50]}...")
         try:
             extraction_prompt = f"""Извлеки факты о пользователе из этого разговора.
 
@@ -182,7 +179,6 @@ class AIService:
             )
 
             text = response.content[0].text if response.content else ""
-            logger.info(f"Extracted text: {text[:200]}...")
             
             if text.startswith("```json"):
                 text = text[7:]
@@ -193,7 +189,6 @@ class AIService:
             
             try:
                 facts = json.loads(text.strip())
-                logger.info(f"Parsed facts: {facts}")
                 if isinstance(facts, list):
                     for fact in facts:
                         if "fact_type" in fact and "fact_value" in fact:
