@@ -7,7 +7,7 @@ import os
 from anthropic import AsyncAnthropic
 
 from bot.database import db
-from bot.services import search_service
+from bot.services.search_service import search_service
 
 logger = logging.getLogger(__name__)
 
@@ -98,8 +98,9 @@ class AIService:
             if context_messages:
                 context_parts.append("Из прошлых разговоров:\n" + "\n".join(f"- {m[:150]}" for m in context_messages[-3:]))
             
-            search_indicators = ["погода", "новости", "что new", "сегодня", "сейчас", "2024", "2025", "2026", "курс", "цена", "кто такой", "что такое"]
+            search_indicators = ["погода", "новости", "что new", "сегодня", "сейчас", "2024", "2025", "2026", "курс", "цена", "кто такой", "что такое", "найти", "узнать"]
             needs_search = any(word in user_message.lower() for word in search_indicators)
+            logger.info(f"Message: {user_message}, needs_search: {needs_search}")
             
             search_result = ""
             if needs_search:
