@@ -6,7 +6,7 @@ from aiogram.filters import CommandStart
 from aiogram.types import Message
 from aiogram import html
 
-from bot.services.ai_service import ai_service
+from bot.services.ai_service import get_ai_service
 from bot.database import db
 
 logger = logging.getLogger(__name__)
@@ -38,7 +38,7 @@ async def ai_handler(message: Message) -> None:
         conversation_history.append({"role": "assistant", "content": msg.bot_response})
 
     await message.answer("Thinking...")
-    response = await ai_service.get_response(user_text, conversation_history)
+    response = await get_ai_service().get_response(user_text, conversation_history)
     response = response.replace("\\n\\n", "\n\n").replace("\\n", "\n")
     await message.answer(response)
 

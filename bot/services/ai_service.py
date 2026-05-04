@@ -98,4 +98,11 @@ class AIService:
             return f"Sorry, I'm having trouble answering right now. ({type(e).__name__}: {e})"
 
 
-ai_service = AIService()
+_ai_service: AIService | None = None
+
+
+def get_ai_service() -> AIService:
+    global _ai_service
+    if _ai_service is None:
+        _ai_service = AIService()
+    return _ai_service
