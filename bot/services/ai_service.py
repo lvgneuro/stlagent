@@ -67,11 +67,15 @@ class AIService:
                 tools=[WEB_SEARCH_TOOL],  # type: ignore[list-item]
             )
 
+            logger.info(f"Response stop_reason: {response.stop_reason}")
+            logger.info(f"Response content: {response.content}")
+            
             if response.stop_reason == "tool_use":
                 tool_use = next((c for c in response.content if c.type == "tool_use"), None)
                 if tool_use:
                     logger.info(f"Claude calling tool: {tool_use.name}")
                     result = search_service.search(str(tool_use.input.get("query", "")))
+                    logger.info(f"Search result: {result[:200]}...")
 
                     messages.append({"role": "assistant", "content": [{"type": block.type, "text": getattr(block, "text", "")} for block in response.content]})
                     messages.append({
@@ -88,6 +92,9 @@ class AIService:
                         system=SYSTEM_PROMPT,
                         messages=messages,
                     )
+                    
+                    logger.info(f"Second response stop_reason: {response.stop_reason}")
+                    logger.info(f"Second response content: {response.content}")
             else:
                 for block in response.content:
                     if hasattr(block, "text"):
