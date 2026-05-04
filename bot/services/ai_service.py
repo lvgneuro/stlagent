@@ -138,14 +138,27 @@ class AIService:
     async def _extract_and_save_facts(self, user_message: str, bot_response: str, user_id: int) -> None:
         logger.info(f"Extracting facts for user {user_id}: {user_message[:50]}...")
         try:
-            extraction_prompt = f"""{FACT_EXTRACTION_PROMPT}
+            extraction_prompt = f"""Извлеки факты о пользователе из этого разговора.
+
+Примеры фактов которые нужно искать:
+- name: имя пользователя (например: "Вячеслав", "Анна")
+- color: любимый цвет (например: "зеленый", "синий")
+- interest: интересы, хобби
+- location: местоположение, город
+- job: работа, профессия
+- other: любые другие значимые факты
 
 Разговор:
 Пользователь: {user_message[:500]}
-Бот: {bot_response[:500]}"""
+Бот: {bot_response[:500]}
+
+Верни JSON массив объектов, например:
+[{{"fact_type": "name", "fact_value": "Иван"}}, {{"fact_type": "color", "fact_value": "синий"}}]
+
+Если фактов нет - верни пустой массив []."""
 
             response = await self._client.messages.create(
-                model="claude-3-5-haiku-20241022",
+                model="claude-sonnet-4-20250514",
                 max_tokens=500,
                 messages=[{"role": "user", "content": extraction_prompt}]
             )
