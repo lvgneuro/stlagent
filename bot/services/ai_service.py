@@ -107,6 +107,27 @@ class AIService:
                 context_parts.append("Из прошлых разговоров:\n" + "\n".join(f"- {m[:150]}" for m in context_messages[-3:]))
             
             search_indicators = ["погода", "новости", "сегодня", "сейчас", "вчера", "курс", "цена", "найти", "узнать", "произошло", "случилось", "магазин", "купить", "адрес", "где находится", "салон", "торговый"]
+            image_triggers = ["нарисуй", "создай картинку", "сгенерируй картинку", "нарисуй изображение", "создай изображение"]
+            
+            needs_image = any(word in user_message.lower() for word in image_triggers)
+            image_url = ""
+            
+            if needs_image:
+                try:
+                    from bot.services.image_service import image_service as ims
+                    if ims.is_configured():
+                        prompt = user_message
+                        for word in image_triggers:
+                            prompt = prompt.replace(word.lower(), "").strip()
+                        
+                        result = await asyncio.to_thread(ims.generate, prompt)
+                        
+                        if "error" in result:
+                            logger.warning(f"Image generation error: {result['error']}")
+                        elif "url" in result:
+                            image_url = result["url"]
+                except Exception as e:
+                    logger.warning(f"Image generation failed: {e}")
             
             url_pattern = re.compile(r'https?://[^\s]+')
             urls = url_pattern.findall(user_message)
@@ -171,7 +192,12 @@ class AIService:
             if text and user_id:
                 await self._extract_and_save_facts(user_message, text, user_id)
             
-            return text if text else "Не удалось получить ответ"
+            response_text = text if text else "Не удалось получить ответ"
+            
+            if image_url:
+                response_text += f"\n\nВот изображение по твоему запросу: {image_url}"
+            
+            return response_text
         except Exception as e:
             logger.error(f"Error getting AI response: {e}", exc_info=True)
             return f"Sorry, I'm having trouble answering right now. ({type(e).__name__}: {e})"
