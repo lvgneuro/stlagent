@@ -159,7 +159,6 @@ class ImageGenerationService:
                     "prompt": prompt,
                     "init_image_id": image_id,
                     "isInitImage": True,
-                    "imagePrompt": "",
                     "width": 512,
                     "height": 512,
                     "num_images": 1,
