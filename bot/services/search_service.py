@@ -42,6 +42,8 @@ class SearchService:
             f"{query} адрес",
             f"{query} магазин",
             f"{query} салон",
+            f"{query} site:2gis.ru",
+            f"{query} Тюмень адрес где купить",
         ]
         
         for q in fallback_queries:
