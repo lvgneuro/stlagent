@@ -62,8 +62,11 @@ class Database:
         else:
             self._engine = create_async_engine("sqlite+aiosqlite:///messages.db", echo=False)
         
-        Base.metadata.create_all(self._engine)
         self._session_factory = async_sessionmaker(self._engine, expire_on_commit=False)
+    
+    async def init_db(self) -> None:
+        async with self._engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
 
     async def save_message(
         self,

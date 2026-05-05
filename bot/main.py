@@ -18,6 +18,7 @@ from bot.config import (
     PORT,
 )
 from bot.routers import echo
+from bot.database import db
 
 logging.basicConfig(level=logging.INFO, stream=sys.stdout)
 
@@ -45,6 +46,9 @@ async def main() -> None:
         raise ValueError("BOT_TOKEN is not set")
     if not WEBHOOK_URL:
         raise ValueError("WEBHOOK_URL is not set")
+
+    await db.init_db()
+    logger.info("Database initialized")
 
     bot = Bot(token=BOT_TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
 
