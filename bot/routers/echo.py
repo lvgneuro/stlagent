@@ -38,8 +38,10 @@ async def ai_handler(message: Message) -> None:
         conversation_history.append({"role": "assistant", "content": msg.bot_response})
 
     await message.answer("Думаю...")
+    logger.info("Getting AI response...")
     response = await get_ai_service().get_response(user_text, conversation_history, user_id)
     response = response.replace("\\n\\n", "\n\n").replace("\\n", "\n")
+    logger.info(f"Sending response: {response[:100]}...")
     await message.answer(response)
 
     await db.save_message(
