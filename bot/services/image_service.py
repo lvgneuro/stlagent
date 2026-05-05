@@ -116,9 +116,9 @@ class ImageGenerationService:
                 }
                 
                 init_resp = client.post(
-                    f"{self._base_url}/upload-init",
+                    f"{self._base_url}/init-image",
                     headers=headers,
-                    json={}
+                    json={"extension": "jpg"}
                 )
                 
                 if init_resp.status_code != 200:
