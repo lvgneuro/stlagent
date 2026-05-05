@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 import os
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import datetime
 
 from sqlalchemy import Column, Integer, String, DateTime, Text
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
@@ -25,7 +25,7 @@ class MessageModel(Base):
     first_name = Column(String, nullable=True)
     user_message = Column(String, nullable=False)
     bot_response = Column(String, nullable=False)
-    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    created_at = Column(DateTime, default=datetime.now)
 
 
 class UserFactModel(Base):
@@ -36,7 +36,7 @@ class UserFactModel(Base):
     fact_type = Column(String, nullable=False)
     fact_value = Column(String, nullable=False)
     context = Column(Text, nullable=True)
-    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    created_at = Column(DateTime, default=datetime.now)
 
 
 @dataclass
@@ -106,7 +106,7 @@ class Database:
                     first_name=str(row.first_name) if row.first_name else None,
                     user_message=str(row.user_message),
                     bot_response=str(row.bot_response),
-                    created_at=datetime.now(timezone.utc) if row.created_at is None else row.created_at,
+                    created_at=datetime.now() if row.created_at is None else row.created_at,
                 )
                 for row in rows
             ]
