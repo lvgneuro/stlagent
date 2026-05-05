@@ -109,14 +109,11 @@ class Database:
         context: str | None = None,
     ) -> None:
         with Session(self._engine) as session:
-            existing = (
-                select(UserFactModel)
-                .where(
-                    UserFactModel.user_id == user_id,
-                    UserFactModel.fact_type == fact_type,
-                )
-                .first()
+            stmt = select(UserFactModel).where(
+                UserFactModel.user_id == user_id,
+                UserFactModel.fact_type == fact_type,
             )
+            existing = session.execute(stmt).scalar_one_or_none()
             if existing:
                 existing.fact_value = fact_value
                 if context:

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
 import os
@@ -104,7 +105,7 @@ class AIService:
             if needs_search:
                 try:
                     from bot.services.search_service import search_service as ss
-                    search_result = ss.search(user_message)
+                    search_result = await asyncio.to_thread(ss.search, user_message)
                     logger.info(f"Search result: {search_result[:200]}...")
                 except Exception as e:
                     logger.warning(f"Search failed: {e}")
@@ -127,8 +128,8 @@ class AIService:
 
         try:
             logger.info(f"Sending message to Claude: {user_message[:50]}...")
-            response = await self._client.beta.messages.create(
-                model="claude-sonnet-4-6",
+            response = await self._client.messages.create(
+                model="claude-sonnet-4-20250514",
                 max_tokens=1024,
                 system=system_with_context,
                 messages=messages,

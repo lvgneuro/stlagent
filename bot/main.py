@@ -3,8 +3,6 @@ from __future__ import annotations
 import asyncio
 import logging
 import sys
-import hashlib
-import hmac
 
 from aiohttp import web
 from aiogram import Bot, Dispatcher
@@ -29,16 +27,9 @@ dp = Dispatcher()
 dp.include_router(echo.router)
 
 
-def verify_signature(body: bytes, secret: str, signature: str) -> bool:
-    if not signature:
-        return False
-    expected = hmac.new(secret.encode(), body, hashlib.sha256).hexdigest()
-    return hmac.compare_digest(expected, signature)
-
-
 async def on_startup(bot: Bot) -> None:
     if not WEBHOOK_URL:
-        raise ValueError("WEBHOOK_URL is not set in .env")
+        raise ValueError("WEBHOOK_URL is not set")
     await bot.set_webhook(WEBHOOK_URL)
     logger.info(f"Webhook set to {WEBHOOK_URL}")
 
@@ -53,7 +44,7 @@ async def main() -> None:
     if not BOT_TOKEN:
         raise ValueError("BOT_TOKEN is not set")
     if not WEBHOOK_URL:
-        raise ValueError("WEBHOOK_URL is not set. Use ngrok or other HTTPS endpoint.")
+        raise ValueError("WEBHOOK_URL is not set")
 
     bot = Bot(token=BOT_TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
 
