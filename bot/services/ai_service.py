@@ -110,13 +110,14 @@ class AIService:
             
             needs_search = any(word in user_message.lower() for word in search_indicators) or bool(urls)
             
-            search_result = ""
+search_result = ""
             if needs_search:
                 try:
                     from bot.services.search_service import search_service as ss
-                    search_query = user_message if not urls else " ".join(urls)
-                    search_result = await asyncio.to_thread(ss.search, search_query)
-                    logger.info(f"Search result: {search_result[:200]}...")
+                    result = await asyncio.to_thread(ss.search, user_message)
+                    if result and result.strip():
+                        search_result = result
+                        logger.info(f"Search result: {search_result[:200]}...")
                 except Exception as e:
                     logger.warning(f"Search failed: {e}")
                 try:
@@ -144,7 +145,13 @@ class AIService:
         messages = []
         if conversation_history:
             for msg in conversation_history:
-                messages.append({"role": msg.get("role", "user"), "content": msg.get("content", "")})
+                content = msg.get("content", "").strip()
+                if content:
+                    messages.append({"role": msg.get("role", "user"), "content": content})
+        
+        if not user_message or not user_message.strip():
+            return "Извини, я не получил текст сообщения. Попробуй еще раз."
+        
         messages.append({"role": "user", "content": user_message})
 
         try:
