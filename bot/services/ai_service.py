@@ -4,6 +4,7 @@ import asyncio
 import json
 import logging
 import os
+import re
 
 from anthropic import AsyncAnthropic
 
@@ -103,10 +104,21 @@ class AIService:
                 context_parts.append("Из прошлых разговоров:\n" + "\n".join(f"- {m[:150]}" for m in context_messages[-3:]))
             
             search_indicators = ["погода", "новости", "сегодня", "сейчас", "вчера", "курс", "цена", "найти", "узнать", "произошло", "случилось"]
-            needs_search = any(word in user_message.lower() for word in search_indicators)
+            
+            url_pattern = re.compile(r'https?://[^\s]+')
+            urls = url_pattern.findall(user_message)
+            
+            needs_search = any(word in user_message.lower() for word in search_indicators) or bool(urls)
             
             search_result = ""
             if needs_search:
+                try:
+                    from bot.services.search_service import search_service as ss
+                    search_query = user_message if not urls else " ".join(urls)
+                    search_result = await asyncio.to_thread(ss.search, search_query)
+                    logger.info(f"Search result: {search_result[:200]}...")
+                except Exception as e:
+                    logger.warning(f"Search failed: {e}")
                 try:
                     from bot.services.search_service import search_service as ss
                     search_result = await asyncio.to_thread(ss.search, user_message)
