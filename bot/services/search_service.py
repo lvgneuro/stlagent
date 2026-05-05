@@ -44,9 +44,16 @@ class SearchService:
             f"{query} салон",
             f"{query} site:2gis.ru",
             f"{query} Тюмень адрес где купить",
+            f"калинка диваны тюмень",
+            f"калинка мебель тюмень официальный сайт",
+            f'"Калинка" диван Тюмень купить',
         ]
         
+        seen = set()
         for q in fallback_queries:
+            if q.lower() in seen:
+                continue
+            seen.add(q.lower())
             result = self._search_duckduckgo(q)
             if result:
                 return result
