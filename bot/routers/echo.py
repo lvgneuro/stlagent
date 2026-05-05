@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import base64
-import io
 import logging
 import re
 from aiogram import Router, Bot
@@ -9,7 +8,7 @@ from aiogram.filters import CommandStart
 from aiogram.types import Message
 from aiogram import html
 
-from bot.services.ai_service import get_ai_service, AIService
+from bot.services.ai_service import get_ai_service
 from bot.database import db
 
 logger = logging.getLogger(__name__)
@@ -39,35 +38,56 @@ async def ai_handler(message: Message, bot: Bot) -> None:
     has_photo = message.photo is not None and len(message.photo) > 0
     
     if has_photo:
-        logger.info(f"Got photo from user {user_id}")
-        await message.answer("Анализирую изображение...")
+        logger.info(f"Got photo from user {user_id}, caption: {message.caption!r}")
         
         try:
             photo = message.photo[-1]
             file = await bot.download(photo)
             image_data = base64.b64encode(file.read()).decode("utf-8")
             
-            ai_service = get_ai_service()
-            response = await ai_service.analyze_image(image_data, message.caption or "Опиши что ты видишь на этом изображении")
+            user_text = (message.caption or "").strip()
             
-            response = response.replace("\\n\\n", "\n\n").replace("\\n", "\n")
-            response = clean_html(response)
-            
-            logger.info(f"Image analysis: {response[:100]}...")
-            await message.answer(response)
-            
-            user_text = message.caption or "[Изображение]"
-            await db.save_message(
-                user_id=user_id,
-                username=username,
-                first_name=first_name,
-                user_message=user_text,
-                bot_response=response,
-            )
+            if user_text.strip():
+                await message.answer("Редактирую изображение...")
+                ai_service = get_ai_service()
+                response = await ai_service.edit_image(image_data, user_text)
+                
+                if "error" in response:
+                    await message.answer(f"Ошибка: {response['error']}")
+                else:
+                    await message.answer(response["url"])
+                    response = f"[Изображение отредактировано: {user_text}]"
+                
+                await db.save_message(
+                    user_id=user_id,
+                    username=username,
+                    first_name=first_name,
+                    user_message=f"[Фото + запрос: {user_text}]",
+                    bot_response=response,
+                )
+            else:
+                await message.answer("Анализирую изображение...")
+                ai_service = get_ai_service()
+                response = await ai_service.analyze_image(image_data, "Опиши что ты видишь на этом изображении")
+                
+                response = response.replace("\\n\\n", "\n\n").replace("\\n", "\n")
+                response = clean_html(response)
+                
+                logger.info(f"Image analysis: {response[:100]}...")
+                await message.answer(response)
+                
+                user_text = "[Изображение]"
+                await db.save_message(
+                    user_id=user_id,
+                    username=username,
+                    first_name=first_name,
+                    user_message=user_text,
+                    bot_response=response,
+                )
             return
         except Exception as e:
-            logger.error(f"Image analysis error: {e}")
-            await message.answer(f"Не удалось проанализировать изображение: {type(e).__name__}")
+            logger.error(f"Image handling error: {e}")
+            await message.answer(f"Ошибка обработки изображения: {type(e).__name__}")
             return
 
     logger.info(f"Got message: {message.text[:50] if message.text else 'empty'}")

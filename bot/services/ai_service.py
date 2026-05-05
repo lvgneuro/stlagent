@@ -9,6 +9,7 @@ import re
 from anthropic import AsyncAnthropic
 
 from bot.database import db
+from bot.services.image_service import image_service
 
 logger = logging.getLogger(__name__)
 
@@ -289,6 +290,12 @@ class AIService:
         except Exception as e:
             logger.error(f"Error analyzing image: {e}", exc_info=True)
             return f"Ошибка при анализе изображения: {type(e).__name__}: {e}"
+    
+    async def edit_image(self, image_base64: str, prompt: str) -> dict:
+        if not image_service.is_configured():
+            return {"error": "Сервис изображений не настроен"}
+        
+        return image_service.edit_image(image_base64, prompt)
 
 
 _ai_service: AIService | None = None
