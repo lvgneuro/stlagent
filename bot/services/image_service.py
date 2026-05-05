@@ -186,6 +186,9 @@ class ImageGenerationService:
                     generation_id = data.get("generationId")
                 
                 if not generation_id:
+                    generation_id = data.get("sdGenerationJob", {}).get("generationId")
+                
+                if not generation_id:
                     return {"error": "No generation ID returned", "data": str(data)[:300]}
                 
                 for _ in range(60):
