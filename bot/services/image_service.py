@@ -112,27 +112,41 @@ class ImageGenerationService:
             with httpx.Client(timeout=180) as client:
                 headers = {
                     "Authorization": f"Bearer {self._api_key}",
+                    "Content-Type": "application/json"
                 }
                 
-                import io
-                image_bytes = base64.b64decode(image_data)
-                files = {"file": ("image.jpg", io.BytesIO(image_bytes), "image/jpeg")}
-                
-                upload_resp = client.post(
+                init_resp = client.post(
                     f"{self._base_url}/upload-init",
                     headers=headers,
-                    files=files
+                    json={}
                 )
                 
-                if upload_resp.status_code != 200:
-                    logger.error(f"Upload error: {upload_resp.status_code} - {upload_resp.text}")
-                    return {"error": f"Upload failed: {upload_resp.status_code}"}
+                if init_resp.status_code != 200:
+                    logger.error(f"Init error: {init_resp.status_code} - {init_resp.text}")
+                    return {"error": f"Init failed: {init_resp.status_code}"}
                 
-                upload_data = upload_resp.json()
-                image_id = upload_data.get("uploadedImageId")
+                init_data = init_resp.json()
+                upload_info = init_data.get("uploadInitImage", {})
+                image_id = upload_info.get("id")
                 
                 if not image_id:
-                    return {"error": "No image ID returned"}
+                    return {"error": "No image ID returned", "data": str(init_data)[:200]}
+                
+                upload_url = upload_info.get("url")
+                fields_str = upload_info.get("fields", "{}")
+                
+                import json
+                fields = json.loads(fields_str)
+                fields["file"] = base64.b64decode(image_data)
+                
+                upload_resp = client.post(
+                    upload_url,
+                    files={"file": ("image.jpg", base64.b64decode(image_data), "image/jpeg")}
+                )
+                
+                if upload_resp.status_code not in (200, 204):
+                    logger.error(f"S3 upload error: {upload_resp.status_code} - {upload_resp.text}")
+                    return {"error": f"S3 upload failed: {upload_resp.status_code}"}
                 
                 gen_headers = {
                     "Authorization": f"Bearer {self._api_key}",
