@@ -176,13 +176,17 @@ class ImageGenerationService:
                     return {"error": f"API error: {response.status_code}", "detail": response.text[:200]}
                 
                 data = response.json()
+                logger.error(f"Generation response: {data}")
                 generation_id = data.get("sdks_job_id")
                 
                 if not generation_id:
                     generation_id = data.get("_generationJob", {}).get("generationId")
                 
                 if not generation_id:
-                    return {"error": "No generation ID returned", "data": str(data)[:200]}
+                    generation_id = data.get("generationId")
+                
+                if not generation_id:
+                    return {"error": "No generation ID returned", "data": str(data)[:300]}
                 
                 for _ in range(60):
                     status_resp = client.get(
