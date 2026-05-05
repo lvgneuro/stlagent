@@ -5,7 +5,7 @@ import os
 from dataclasses import dataclass
 from datetime import datetime
 
-from sqlalchemy import Column, Integer, String, DateTime, Text
+from sqlalchemy import Column, BigInteger, Integer, String, DateTime, Text
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 from sqlalchemy.orm import DeclarativeBase
 
@@ -20,7 +20,7 @@ class MessageModel(Base):
     __tablename__ = "messages"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    user_id = Column(Integer, nullable=False, index=True)
+    user_id = Column(BigInteger, nullable=False, index=True)
     username = Column(String, nullable=True)
     first_name = Column(String, nullable=True)
     user_message = Column(String, nullable=False)
@@ -32,7 +32,7 @@ class UserFactModel(Base):
     __tablename__ = "user_facts"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    user_id = Column(Integer, nullable=False, index=True)
+    user_id = Column(BigInteger, nullable=False, index=True)
     fact_type = Column(String, nullable=False)
     fact_value = Column(String, nullable=False)
     context = Column(Text, nullable=True)
