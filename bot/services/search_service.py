@@ -19,7 +19,7 @@ class SearchService:
 
     def _search_duckduckgo(self, query: str) -> str:
         try:
-            results = list(self._ddgs.text(query, max_results=5))
+            results = list(self._ddgs.text(query, max_results=8))
             if not results:
                 return ""
             summary = []
@@ -32,6 +32,24 @@ class SearchService:
         except Exception as e:
             logger.warning(f"DuckDuckGo search failed: {e}")
             return ""
+    
+    def _search_with_fallback(self, query: str) -> str:
+        result = self._search_duckduckgo(query)
+        if result:
+            return result
+        
+        fallback_queries = [
+            f"{query} адрес",
+            f"{query} магазин",
+            f"{query} салон",
+        ]
+        
+        for q in fallback_queries:
+            result = self._search_duckduckgo(q)
+            if result:
+                return result
+        
+        return ""
 
     def search(self, query: str) -> str:
         try:
@@ -48,7 +66,7 @@ class SearchService:
             needs_local = any(word in query.lower() for word in city_indicators)
             
             if needs_local:
-                ddg_result = self._search_duckduckgo(query)
+                ddg_result = self._search_with_fallback(query)
                 if ddg_result:
                     return tavily_result + "\n\nЛокальные данные:\n" + ddg_result
             
