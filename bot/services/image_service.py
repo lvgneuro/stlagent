@@ -137,11 +137,13 @@ class ImageGenerationService:
                 
                 import json
                 fields = json.loads(fields_str)
-                fields["file"] = base64.b64decode(image_data)
+                
+                files = {"file": ("image.jpg", base64.b64decode(image_data), "image/jpeg")}
                 
                 upload_resp = client.post(
                     upload_url,
-                    files={"file": ("image.jpg", base64.b64decode(image_data), "image/jpeg")}
+                    data=fields,
+                    files=files
                 )
                 
                 if upload_resp.status_code not in (200, 204):
