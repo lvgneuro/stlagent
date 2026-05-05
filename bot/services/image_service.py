@@ -197,9 +197,8 @@ class ImageGenerationService:
                         headers=gen_headers
                     )
                     status_data = status_resp.json()
-                    logger.error(f"Status check: {status_data}")
                     
-                    job = status_data.get("sdGenerationJob", {})
+                    job = status_data.get("generations_by_pk", {})
                     status = job.get("status", "UNKNOWN")
                     
                     if status == "COMPLETE":
