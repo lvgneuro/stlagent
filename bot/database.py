@@ -54,7 +54,9 @@ class Database:
         database_url = os.getenv("DATABASE_URL")
         
         if database_url:
-            if database_url.startswith("postgres://"):
+            if "postgresql://" in database_url:
+                database_url = database_url.replace("postgresql://", "postgresql+asyncpg://", 1)
+            elif "postgres://" in database_url:
                 database_url = database_url.replace("postgres://", "postgresql+asyncpg://", 1)
             self._engine = create_async_engine(database_url, echo=False)
         else:
