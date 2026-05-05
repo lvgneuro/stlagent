@@ -112,21 +112,48 @@ class ImageGenerationService:
             with httpx.Client(timeout=180) as client:
                 headers = {
                     "Authorization": f"Bearer {self._api_key}",
+                }
+                
+                import io
+                image_bytes = base64.b64decode(image_data)
+                files = {"file": ("image.jpg", io.BytesIO(image_bytes), "image/jpeg")}
+                
+                upload_resp = client.post(
+                    f"{self._base_url}/upload-init",
+                    headers=headers,
+                    files=files
+                )
+                
+                if upload_resp.status_code != 200:
+                    logger.error(f"Upload error: {upload_resp.status_code} - {upload_resp.text}")
+                    return {"error": f"Upload failed: {upload_resp.status_code}"}
+                
+                upload_data = upload_resp.json()
+                image_id = upload_data.get("uploadedImageId")
+                
+                if not image_id:
+                    return {"error": "No image ID returned"}
+                
+                gen_headers = {
+                    "Authorization": f"Bearer {self._api_key}",
                     "Content-Type": "application/json"
                 }
                 
                 payload = {
+                    "prompt": prompt,
+                    "init_image_id": image_id,
+                    "isInitImage": True,
+                    "imagePrompt": "",
                     "width": 512,
                     "height": 512,
-                    "imageDataUrl": f"data:image/jpeg;base64,{image_data}",
-                    "prompt": prompt,
-                    "strength": 0.6,
-                    "style": "CINEMATIC"
+                    "num_images": 1,
+                    "guidance_scale": 7.5,
+                    "num_inference_steps": 30
                 }
                 
                 response = client.post(
-                    f"{self._base_url}/generations-lcm",
-                    headers=headers,
+                    f"{self._base_url}/generations",
+                    headers=gen_headers,
                     json=payload
                 )
                 
@@ -146,7 +173,7 @@ class ImageGenerationService:
                 for _ in range(60):
                     status_resp = client.get(
                         f"{self._base_url}/generations/{generation_id}",
-                        headers=headers
+                        headers=gen_headers
                     )
                     status_data = status_resp.json()
                     status = status_data.get("generationJob", {}).get("status", "UNKNOWN")
