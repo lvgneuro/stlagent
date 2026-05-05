@@ -230,6 +230,40 @@ class AIService:
         except Exception as e:
             logger.error(f"Error extracting facts: {e}")
 
+    async def analyze_image(self, image_base64: str, question: str = "Опиши что ты видишь") -> str:
+        if not self._client:
+            return "⚠️ Бот не настроен: отсутствует ANTHROPIC_API_KEY"
+        
+        try:
+            content = [
+                {"type": "text", "text": question},
+                {
+                    "type": "image",
+                    "source": {
+                        "type": "base64",
+                        "media_type": "image/jpeg",
+                        "data": image_base64
+                    }
+                }
+            ]
+            
+            response = await self._client.messages.create(
+                model="claude-sonnet-4-20250514",
+                max_tokens=1024,
+                messages=[{"role": "user", "content": content}],
+            )
+            
+            text = None
+            for block in response.content:
+                if hasattr(block, "text"):
+                    text = block.text
+                    break
+            
+            return text if text else "Не удалось проанализировать изображение"
+        except Exception as e:
+            logger.error(f"Error analyzing image: {e}", exc_info=True)
+            return f"Ошибка при анализе изображения: {type(e).__name__}: {e}"
+
 
 _ai_service: AIService | None = None
 
