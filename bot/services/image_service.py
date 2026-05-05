@@ -197,7 +197,17 @@ class ImageGenerationService:
                         headers=gen_headers
                     )
                     status_data = status_resp.json()
-                    status = status_data.get("generationJob", {}).get("status", "UNKNOWN")
+                    logger.error(f"Status check: {status_data}")
+                    
+                    job = status_data.get("sdGenerationJob", {})
+                    status = job.get("status", "UNKNOWN")
+                    
+                    if status == "COMPLETE":
+                        images = job.get("generated_images", [])
+                        if images:
+                            return {"url": images[0].get("url", "")}
+                    elif status == "FAILED":
+                        return {"error": "Generation failed"}
                     
                     if status == "COMPLETE":
                         images = status_data.get("generationJob", {}).get("generated_images", [])
