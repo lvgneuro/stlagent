@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import re
 from aiogram import Router
 from aiogram.filters import CommandStart
 from aiogram.types import Message
@@ -12,6 +13,11 @@ from bot.database import db
 logger = logging.getLogger(__name__)
 
 router = Router()
+
+
+def clean_html(text: str) -> str:
+    text = re.sub(r"<[^>]+>", "", text)
+    return text
 
 
 @router.message(CommandStart())
@@ -41,6 +47,7 @@ async def ai_handler(message: Message) -> None:
     logger.info("Getting AI response...")
     response = await get_ai_service().get_response(user_text, conversation_history, user_id)
     response = response.replace("\\n\\n", "\n\n").replace("\\n", "\n")
+    response = clean_html(response)
     logger.info(f"Sending response: {response[:100]}...")
     await message.answer(response)
 
