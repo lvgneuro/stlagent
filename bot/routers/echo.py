@@ -36,12 +36,18 @@ async def ai_handler(message: Message) -> None:
 
     logger.info(f"Got message: {message.text[:50] if message.text else 'empty'}")
     user_text = message.text or ""
+    
+    if not user_text.strip():
+        await message.answer("Не могу ответить на пустое сообщение. Напиши что-нибудь.")
+        return
 
     history = await db.get_user_messages(user_id, limit=20)
     conversation_history = []
     for msg in reversed(history):
-        conversation_history.append({"role": "user", "content": msg.user_message})
-        conversation_history.append({"role": "assistant", "content": msg.bot_response})
+        if msg.user_message and msg.user_message.strip():
+            conversation_history.append({"role": "user", "content": msg.user_message})
+        if msg.bot_response and msg.bot_response.strip():
+            conversation_history.append({"role": "assistant", "content": msg.bot_response})
 
     await message.answer("Думаю...")
     logger.info("Getting AI response...")

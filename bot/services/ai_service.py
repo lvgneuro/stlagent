@@ -110,7 +110,7 @@ class AIService:
             
             needs_search = any(word in user_message.lower() for word in search_indicators) or bool(urls)
             
-search_result = ""
+            search_result = ""
             if needs_search:
                 try:
                     from bot.services.search_service import search_service as ss
@@ -118,12 +118,6 @@ search_result = ""
                     if result and result.strip():
                         search_result = result
                         logger.info(f"Search result: {search_result[:200]}...")
-                except Exception as e:
-                    logger.warning(f"Search failed: {e}")
-                try:
-                    from bot.services.search_service import search_service as ss
-                    search_result = await asyncio.to_thread(ss.search, user_message)
-                    logger.info(f"Search result: {search_result[:200]}...")
                 except Exception as e:
                     logger.warning(f"Search failed: {e}")
             
