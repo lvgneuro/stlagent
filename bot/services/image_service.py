@@ -109,40 +109,39 @@ class ImageGenerationService:
         import httpx
         
         try:
-            with httpx.Client(timeout=120) as client:
+            with httpx.Client(timeout=180) as client:
                 headers = {
                     "Authorization": f"Bearer {self._api_key}",
                     "Content-Type": "application/json"
                 }
                 
-                uploaded_id = self._upload_image(image_data, client)
-                if not uploaded_id:
-                    return {"error": "Failed to upload image"}
-                
                 payload = {
+                    "width": 512,
+                    "height": 512,
+                    "imageDataUrl": f"data:image/jpeg;base64,{image_data}",
                     "prompt": prompt,
-                    "imageId": uploaded_id,
                     "strength": 0.6,
-                    "num_images": 1,
-                    "guidance_scale": 7.5,
-                    "num_inference_steps": 30
+                    "style": "CINEMATIC"
                 }
                 
                 response = client.post(
-                    f"{self._base_url}/generations",
+                    f"{self._base_url}/generations-lcm",
                     headers=headers,
                     json=payload
                 )
                 
                 if response.status_code != 200:
-                    logger.error(f"Leonardo edit error: {response.text}")
+                    logger.error(f"Leonardo edit error: {response.status_code} - {response.text}")
                     return {"error": f"API error: {response.status_code}"}
                 
                 data = response.json()
                 generation_id = data.get("sdks_job_id")
                 
                 if not generation_id:
-                    return {"error": "No generation ID returned"}
+                    generation_id = data.get("_generationJob", {}).get("generationId")
+                
+                if not generation_id:
+                    return {"error": "No generation ID returned", "data": str(data)[:200]}
                 
                 for _ in range(60):
                     status_resp = client.get(
