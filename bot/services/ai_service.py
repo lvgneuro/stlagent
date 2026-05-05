@@ -29,6 +29,8 @@ WEB_SEARCH_TOOL = {
 
 SYSTEM_PROMPT = """Ты — дружелюбный помощник. Всегда отвечай на русском языке.
 
+Важное ограничение: твоя база знаний ограничена моментом обучения (апрель 2024). Ты НЕ имеешь доступа к интернету и не можешь искать актуальную информацию. Если пользователь спрашивает о событиях после апреля 2024 года — честно скажи, что не знаешь.
+
 Форматирование (КРИТИЧЕСКИ ВАЖНО):
 - НЕ используй списки смартфонами (- или •)
 - НЕ используй заголовки (#)
@@ -98,7 +100,7 @@ class AIService:
             if context_messages:
                 context_parts.append("Из прошлых разговоров:\n" + "\n".join(f"- {m[:150]}" for m in context_messages[-3:]))
             
-            search_indicators = ["погода", "новости", "что new", "сегодня", "сейчас", "2024", "2025", "2026", "курс", "цена", "кто такой", "что такое", "найти", "узнать"]
+            search_indicators = ["погода", "новости", "сегодня", "сейчас", "вчера", "курс", "цена", "найти", "узнать", "произошло", "случилось"]
             needs_search = any(word in user_message.lower() for word in search_indicators)
             
             search_result = ""
@@ -123,8 +125,13 @@ class AIService:
             logger.info(f"User facts: {user_facts}, context: {len(context_messages)} messages")
         else:
             system_with_context = SYSTEM_PROMPT
+            conversation_history = []
         
-        messages = [{"role": "user", "content": user_message}]
+        messages = []
+        if conversation_history:
+            for msg in conversation_history:
+                messages.append({"role": msg.get("role", "user"), "content": msg.get("content", "")})
+        messages.append({"role": "user", "content": user_message})
 
         try:
             logger.info(f"Sending message to Claude: {user_message[:50]}...")
