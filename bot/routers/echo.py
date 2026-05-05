@@ -53,7 +53,8 @@ async def ai_handler(message: Message, bot: Bot) -> None:
                 response = await ai_service.edit_image(image_data, user_text)
                 
                 if "error" in response:
-                    await message.answer(f"Ошибка: {response['error']}")
+                    detail = response.get("detail", "")
+                    await message.answer(f"Ошибка: {response['error']} {detail}")
                 else:
                     await message.answer(response["url"])
                     response = f"[Изображение отредактировано: {user_text}]"

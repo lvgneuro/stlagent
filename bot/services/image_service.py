@@ -175,7 +175,7 @@ class ImageGenerationService:
                 
                 if response.status_code != 200:
                     logger.error(f"Leonardo edit error: {response.status_code} - {response.text}")
-                    return {"error": f"API error: {response.status_code}"}
+                    return {"error": f"API error: {response.status_code}", "detail": response.text[:200]}
                 
                 data = response.json()
                 generation_id = data.get("sdks_job_id")
