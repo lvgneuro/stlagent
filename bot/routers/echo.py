@@ -6,6 +6,7 @@ import re
 from aiogram import Router, Bot
 from aiogram.filters import CommandStart, Command
 from aiogram.types import Message
+from aiogram.types import FSInputFile
 from aiogram import html
 from io import BytesIO
 from pathlib import Path
@@ -45,9 +46,8 @@ async def my_photos_handler(message: Message, bot: Bot) -> None:
     
     await message.answer(f"У меня сохранено {len(images)} изображений. Показываю последние 5...")
     
-    for img in images[:5]:
+for img in images[:5]:
         try:
-            from aiogram.types import FSInputFile
             with tempfile.NamedTemporaryFile(delete=False, suffix=".jpg", mode="wb") as tmp:
                 tmp.write(img.image_data)
                 tmp_path = tmp.name
@@ -87,7 +87,6 @@ async def show_photo_handler(message: Message, bot: Bot) -> None:
         return
     
     try:
-        from aiogram.types import FSInputFile
         with tempfile.NamedTemporaryFile(delete=False, suffix=".jpg", mode="wb") as tmp:
             tmp.write(img.image_data)
             tmp_path = tmp.name
@@ -189,7 +188,6 @@ async def ai_handler(message: Message, bot: Bot) -> None:
             img = await db.get_image_by_id(image_id, user_id)
             if img:
                 try:
-                    from aiogram.types import FSInputFile
                     with tempfile.NamedTemporaryFile(delete=False, suffix=".jpg", mode="wb") as tmp:
                         tmp.write(img.image_data)
                         tmp_path = tmp.name
