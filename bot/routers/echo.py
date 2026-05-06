@@ -129,16 +129,18 @@ async def ai_handler(message: Message, bot: Bot) -> None:
             user_text = (message.caption or "").strip()
             
             if user_text.strip():
-                await message.answer("Редактирую изображение...")
+                editing_msg = await message.answer("Редактирую изображение...")
                 ai_service = get_ai_service()
                 response = await ai_service.edit_image(image_data, user_text)
                 
                 if "error" in response:
                     detail = response.get("detail", "")
                     await message.answer(f"Ошибка: {response['error']} {detail}")
+                    await editing_msg.delete()
                 else:
                     await message.answer(response["url"])
                     response = f"[Изображение отредактировано: {user_text}]"
+                    await editing_msg.delete()
                 
                 await db.save_message(
                     user_id=user_id,
@@ -148,7 +150,7 @@ async def ai_handler(message: Message, bot: Bot) -> None:
                     bot_response=response,
                 )
             else:
-                await message.answer("Анализирую изображение...")
+                analyzing_msg = await message.answer("Анализирую изображение...")
                 ai_service = get_ai_service()
                 response = await ai_service.analyze_image(image_data, "Опиши что ты видишь на этом изображении")
                 
@@ -157,6 +159,7 @@ async def ai_handler(message: Message, bot: Bot) -> None:
                 
                 logger.info(f"Image analysis: {response[:100]}...")
                 await message.answer(response)
+                await analyzing_msg.delete()
                 
                 user_text = "[Изображение]"
                 await db.save_message(
@@ -187,13 +190,14 @@ async def ai_handler(message: Message, bot: Bot) -> None:
         if msg.bot_response and msg.bot_response.strip():
             conversation_history.append({"role": "assistant", "content": msg.bot_response})
 
-    await message.answer("Думаю...")
+    thinking_msg = await message.answer("Думаю...")
     logger.info("Getting AI response...")
     response = await get_ai_service().get_response(user_text, conversation_history, user_id)
     response = response.replace("\\n\\n", "\n\n").replace("\\n", "\n")
     response = clean_html(response)
     logger.info(f"Sending response: {response[:100]}...")
     await message.answer(response)
+    await thinking_msg.delete()
 
     await db.save_message(
         user_id=user_id,
