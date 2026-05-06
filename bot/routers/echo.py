@@ -5,9 +5,11 @@ import logging
 import re
 from aiogram import Router, Bot
 from aiogram.filters import CommandStart, Command
-from aiogram.types import Message, InputFile
+from aiogram.types import Message
 from aiogram import html
 from io import BytesIO
+from pathlib import Path
+import tempfile
 
 from bot.services.ai_service import get_ai_service
 from bot.database import db
@@ -45,11 +47,16 @@ async def my_photos_handler(message: Message, bot: Bot) -> None:
     
     for img in images[:5]:
         try:
-            photo = InputFile.from_bytes(img.image_data)
+            with tempfile.NamedTemporaryFile(delete=False, suffix=".jpg") as tmp:
+                tmp.write(img.image_data)
+                tmp_path = tmp.name
+            from aiogram.types import InputFile
+            photo = InputFile(tmp_path)
             if img.description:
                 await bot.send_photo(user_id, photo, caption=f"Изображение #{img.id}")
             else:
                 await bot.send_photo(user_id, photo)
+            Path(tmp_path).unlink(missing_ok=True)
         except Exception as e:
             logger.error(f"Error sending image {img.id}: {e}")
     
@@ -80,11 +87,16 @@ async def show_photo_handler(message: Message, bot: Bot) -> None:
         return
     
     try:
-        photo = InputFile.from_bytes(img.image_data)
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".jpg") as tmp:
+            tmp.write(img.image_data)
+            tmp_path = tmp.name
+        from aiogram.types import InputFile
+        photo = InputFile(tmp_path)
         caption = f"Изображение #{img.id}"
         if img.description:
             caption += f"\nОписание: {img.description}"
         await bot.send_photo(user_id, photo, caption=caption)
+        Path(tmp_path).unlink(missing_ok=True)
     except Exception as e:
         logger.error(f"Error sending image {image_id}: {e}")
         await message.answer(f"Не удалось отправить изображение: {type(e).__name__}")
