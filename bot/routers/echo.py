@@ -45,7 +45,7 @@ async def my_photos_handler(message: Message, bot: Bot) -> None:
     
     for img in images[:5]:
         try:
-            photo = InputFile(BytesIO(img.image_data))
+            photo = InputFile.from_bytes(img.image_data)
             if img.description:
                 await bot.send_photo(user_id, photo, caption=f"Изображение #{img.id}")
             else:
@@ -80,7 +80,7 @@ async def show_photo_handler(message: Message, bot: Bot) -> None:
         return
     
     try:
-        photo = InputFile(BytesIO(img.image_data))
+        photo = InputFile.from_bytes(img.image_data)
         caption = f"Изображение #{img.id}"
         if img.description:
             caption += f"\nОписание: {img.description}"
