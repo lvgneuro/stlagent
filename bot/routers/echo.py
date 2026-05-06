@@ -182,6 +182,41 @@ async def ai_handler(message: Message, bot: Bot) -> None:
         await message.answer("Не могу ответить на пустое сообщение. Напиши что-нибудь.")
         return
 
+    photo_request = re.search(r"/фото\s*(\d+)|покажи.*фото|отправь.*фото", user_text.lower())
+    if photo_request:
+        image_id = int(photo_request.group(1)) if photo_request.group(1) else None
+        if image_id:
+            img = await db.get_image_by_id(image_id, user_id)
+            if img:
+                try:
+                    from aiogram.types import FSInputFile
+                    with tempfile.NamedTemporaryFile(delete=False, suffix=".jpg", mode="wb") as tmp:
+                        tmp.write(img.image_data)
+                        tmp_path = tmp.name
+                    photo = FSInputFile(tmp_path)
+                    await bot.send_photo(user_id, photo, caption=f"Изображение #{img.id}")
+                    Path(tmp_path).unlink(missing_ok=True)
+                    return
+                except Exception as e:
+                    logger.error(f"Error sending image {image_id}: {e}")
+        
+        images = await db.get_user_images(user_id, limit=5)
+        if images:
+            for img in images[:5]:
+                try:
+                    with tempfile.NamedTemporaryFile(delete=False, suffix=".jpg", mode="wb") as tmp:
+                        tmp.write(img.image_data)
+                        tmp_path = tmp.name
+                    photo = FSInputFile(tmp_path)
+                    await bot.send_photo(user_id, photo, caption=f"Изображение #{img.id}")
+                    Path(tmp_path).unlink(missing_ok=True)
+                except Exception as e:
+                    logger.error(f"Error sending image {img.id}: {e}")
+            return
+        else:
+            await message.answer("У меня пока нет сохранённых фото. Отправь фото, и я его запомню!")
+            return
+
     history = await db.get_user_messages(user_id, limit=20)
     conversation_history = []
     for msg in reversed(history):
