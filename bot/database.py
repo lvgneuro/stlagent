@@ -5,7 +5,7 @@ import os
 from dataclasses import dataclass
 from datetime import datetime
 
-from sqlalchemy import Column, BigInteger, Integer, String, DateTime, Text
+from sqlalchemy import Column, BigInteger, Integer, String, DateTime, Text, LargeBinary
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 from sqlalchemy.orm import DeclarativeBase
 
@@ -39,6 +39,17 @@ class UserFactModel(Base):
     created_at = Column(DateTime, default=datetime.now)
 
 
+class UserImageModel(Base):
+    __tablename__ = "user_images"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    user_id = Column(BigInteger, nullable=False, index=True)
+    image_data = Column(LargeBinary, nullable=False)
+    file_id = Column(String, nullable=True)
+    description = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=datetime.now)
+
+
 @dataclass
 class Message:
     user_id: int
@@ -46,6 +57,16 @@ class Message:
     first_name: str | None
     user_message: str
     bot_response: str
+    created_at: datetime
+
+
+@dataclass
+class UserImage:
+    id: int
+    user_id: int
+    image_data: bytes
+    file_id: str | None
+    description: str | None
     created_at: datetime
 
 
@@ -173,6 +194,68 @@ class Database:
                 if query_lower in text or any(word in text for word in query_lower.split()[:3]):
                     results.append(f"Вопрос: {row.user_message}\nОтвет: {row.bot_response}")
             return results[-5:]
+
+    async def save_image(
+        self,
+        user_id: int,
+        image_data: bytes,
+        file_id: str | None = None,
+        description: str | None = None,
+    ) -> int:
+        async with self._session_factory() as session:
+            image = UserImageModel(
+                user_id=user_id,
+                image_data=image_data,
+                file_id=file_id,
+                description=description,
+            )
+            session.add(image)
+            await session.commit()
+            logger.info(f"Saved image for user {user_id}")
+            return image.id
+
+    async def get_user_images(self, user_id: int, limit: int = 20) -> list[UserImage]:
+        async with self._session_factory() as session:
+            from sqlalchemy import select
+            stmt = (
+                select(UserImageModel)
+                .where(UserImageModel.user_id == user_id)
+                .order_by(UserImageModel.created_at.desc())
+                .limit(limit)
+            )
+            result = await session.execute(stmt)
+            rows = result.scalars().all()
+            return [
+                UserImage(
+                    id=row.id,
+                    user_id=int(row.user_id),
+                    image_data=row.image_data,
+                    file_id=str(row.file_id) if row.file_id else None,
+                    description=str(row.description) if row.description else None,
+                    created_at=datetime.now() if row.created_at is None else row.created_at,
+                )
+                for row in rows
+            ]
+
+    async def get_image_by_id(self, image_id: int, user_id: int) -> UserImage | None:
+        async with self._session_factory() as session:
+            from sqlalchemy import select
+            stmt = select(UserImageModel).where(
+                UserImageModel.id == image_id,
+                UserImageModel.user_id == user_id,
+            )
+            result = await session.execute(stmt)
+            row = result.scalar_one_or_none()
+            if row:
+                return UserImage(
+                    id=row.id,
+                    user_id=int(row.user_id),
+                    image_data=row.image_data,
+                    file_id=str(row.file_id) if row.file_id else None,
+                    description=str(row.description) if row.description else None,
+                    created_at=datetime.now() if row.created_at is None else row.created_at,
+                )
+            return None
 
 
 db = Database()

@@ -4,9 +4,10 @@ import base64
 import logging
 import re
 from aiogram import Router, Bot
-from aiogram.filters import CommandStart
-from aiogram.types import Message
+from aiogram.filters import CommandStart, Command
+from aiogram.types import Message, InputFile
 from aiogram import html
+from io import BytesIO
 
 from bot.services.ai_service import get_ai_service
 from bot.database import db
@@ -29,6 +30,66 @@ async def command_start_handler(message: Message) -> None:
     await message.answer(f"Hello, {html.bold(name)}! How can I help you today?")
 
 
+@router.message(Command("мои_фото"))
+async def my_photos_handler(message: Message, bot: Bot) -> None:
+    user_id = message.from_user.id if message.from_user else 0
+    logger.info(f"User {user_id} requested their photos")
+    
+    images = await db.get_user_images(user_id, limit=20)
+    
+    if not images:
+        await message.answer("У меня пока нет сохранённых изображений. Отправь мне фото, и я его запомню!")
+        return
+    
+    await message.answer(f"У меня сохранено {len(images)} изображений. Показываю последние 5...")
+    
+    for img in images[:5]:
+        try:
+            photo = InputFile(BytesIO(img.image_data))
+            if img.description:
+                await bot.send_photo(user_id, photo, caption=f"Изображение #{img.id}")
+            else:
+                await bot.send_photo(user_id, photo)
+        except Exception as e:
+            logger.error(f"Error sending image {img.id}: {e}")
+    
+    await message.answer(
+        "Чтобы посмотреть конкретное изображение, напиши: /фото 1 (где 1 - номер изображения)"
+    )
+
+
+@router.message(Command("фото"))
+async def show_photo_handler(message: Message, bot: Bot) -> None:
+    user_id = message.from_user.id if message.from_user else 0
+    
+    parts = message.text.split()
+    if len(parts) < 2:
+        await message.answer("Укажи номер изображения. Например: /фото 1")
+        return
+    
+    try:
+        image_id = int(parts[1])
+    except ValueError:
+        await message.answer("Номер изображения должен быть числом. Например: /фото 1")
+        return
+    
+    img = await db.get_image_by_id(image_id, user_id)
+    
+    if not img:
+        await message.answer(f"Изображение #{image_id} не найдено. Посмотреть список: /мои_фото")
+        return
+    
+    try:
+        photo = InputFile(BytesIO(img.image_data))
+        caption = f"Изображение #{img.id}"
+        if img.description:
+            caption += f"\nОписание: {img.description}"
+        await bot.send_photo(user_id, photo, caption=caption)
+    except Exception as e:
+        logger.error(f"Error sending image {image_id}: {e}")
+        await message.answer(f"Не удалось отправить изображение: {type(e).__name__}")
+
+
 @router.message()
 async def ai_handler(message: Message, bot: Bot) -> None:
     user_id = message.from_user.id if message.from_user else 0
@@ -43,7 +104,15 @@ async def ai_handler(message: Message, bot: Bot) -> None:
         try:
             photo = message.photo[-1]
             file = await bot.download(photo)
-            image_data = base64.b64encode(file.read()).decode("utf-8")
+            image_bytes = file.read()
+            image_data = base64.b64encode(image_bytes).decode("utf-8")
+            
+            await db.save_image(
+                user_id=user_id,
+                image_data=image_bytes,
+                file_id=photo.file_id,
+                description=message.caption,
+            )
             
             user_text = (message.caption or "").strip()
             
