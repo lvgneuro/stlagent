@@ -46,7 +46,7 @@ async def my_photos_handler(message: Message, bot: Bot) -> None:
     
     await message.answer(f"У меня сохранено {len(images)} изображений. Показываю последние 5...")
     
-for img in images[:5]:
+    for img in images[:5]:
         try:
             with tempfile.NamedTemporaryFile(delete=False, suffix=".jpg", mode="wb") as tmp:
                 tmp.write(img.image_data)
