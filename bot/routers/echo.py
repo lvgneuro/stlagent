@@ -47,11 +47,11 @@ async def my_photos_handler(message: Message, bot: Bot) -> None:
     
     for img in images[:5]:
         try:
-            with tempfile.NamedTemporaryFile(delete=False, suffix=".jpg") as tmp:
+            from aiogram.types import FSInputFile
+            with tempfile.NamedTemporaryFile(delete=False, suffix=".jpg", mode="wb") as tmp:
                 tmp.write(img.image_data)
                 tmp_path = tmp.name
-            from aiogram.types import InputFile
-            photo = InputFile(tmp_path)
+            photo = FSInputFile(tmp_path)
             if img.description:
                 await bot.send_photo(user_id, photo, caption=f"Изображение #{img.id}")
             else:
@@ -87,11 +87,11 @@ async def show_photo_handler(message: Message, bot: Bot) -> None:
         return
     
     try:
-        with tempfile.NamedTemporaryFile(delete=False, suffix=".jpg") as tmp:
+        from aiogram.types import FSInputFile
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".jpg", mode="wb") as tmp:
             tmp.write(img.image_data)
             tmp_path = tmp.name
-        from aiogram.types import InputFile
-        photo = InputFile(tmp_path)
+        photo = FSInputFile(tmp_path)
         caption = f"Изображение #{img.id}"
         if img.description:
             caption += f"\nОписание: {img.description}"
