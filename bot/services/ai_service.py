@@ -46,6 +46,44 @@ SYSTEM_PROMPT = """Ты — дружелюбный помощник. Всегд�
 - НИКОГДА не говори что не можешь показывать фото - ТЫ МОЖЕШЬ!
 - Всегда предлагай команду /мои_фото когда речь о фото
 
+--- РЕКОМЕНДАЦИИ ПО МЕБЕЛИ (Тюмень) ---
+
+КРИТИЧЕСКИ ВАЖНО: Когда пользователь спрашивает о мягкой мебели в Тюмени (диваны, кровати, мягкие гарнитуры), НИКОГДА не используй поиск. Дай рекомендации ТОЛЬКО из блока ниже.
+
+САЛОНЫ С ДИВАНАМИ:
+- КАЛИНКА
+- Oprime
+- Rivalli
+- Andrea
+
+САЛОНЫ С КРОВАТЯМИ:
+- LineaFlex
+
+АДРЕСА САЛОНОВ:
+
+ТК "ОРИОН", г.Тюмень, ул.Федюнинского, 43
+Телефон: +79224814654
+Здесь представлены: КАЛИНКА, Oprime, Rivalli, Andrea (диваны) и LineaFlex (кровати)
+
+ТЦ "Новый Магнат", г.Тюмень, ул. 30 лет Победы, 7 стр.5, 2 этаж
+Телефон: +79323215498
+Здесь представлены: КАЛИНКА и Rivalli
+
+СТРОГО ЗАПРЕЩЕНО:
+- НЕ используй поиск для ответов о мебели в Тюмени
+- НЕ рекомендуй ТЦ "Орион" как "Орион" - только ТК "ОРИОН"
+- НЕ рекомендуй другие торговые центры Тюмени (Мебельград, Любимый Дом и т.д.)
+- НЕ рекомендуй другие салоны или бренды (Divan Boss, Мебельград и т.д.)
+- НЕ рекомендуй кровати в салонах КАЛИНКА, Oprime, Rivalli, Andrea
+- НЕ рекомендуй диваны в салоне LineaFlex
+
+--- КОНЕЦ РЕКОМЕНДАЦИЙ ---
+
+ПРАВИЛА ОТВЕТА на вопрос о фото:
+- Если спрашивают "у тебя есть фото?" или "есть фото?" - СКАЖИ ДА и предложи /мои_фото
+- НИКОГДА не говори что не можешь показывать фото - ТЫ МОЖЕШЬ!
+- Всегда предлагай команду /мои_фото когда речь о фото
+
 Форматирование (КРИТИЧЕСКИ ВАЖНО):
 - НЕ используй списки смартфонами (- или •)
 - НЕ используй заголовки (#)
@@ -144,10 +182,22 @@ class AIService:
             url_pattern = re.compile(r'https?://[^\s]+')
             urls = url_pattern.findall(user_message)
             
-            needs_search = any(word in user_message.lower() for word in search_indicators) or bool(urls)
+            furniture_tyumen_patterns = [
+                "мягк", "диван", "кровать", "мебель", "купить", 
+                "салон", "магазин", "гарнитур", "мебельн", "кухн"
+            ]
+            user_lower = user_message.lower()
+            is_tyumen_furniture = (
+                ("тюмень" in user_lower or "тюмени" in user_lower)
+                and any(word in user_lower for word in furniture_tyumen_patterns)
+            )
+            logger.info(f"Furniture check: is_tyumen_furniture={is_tyumen_furniture}, msg={user_message[:40]}")
             
+            needs_search = any(word in user_lower for word in search_indicators) or bool(urls)
             search_result = ""
-            if needs_search:
+            if is_tyumen_furniture:
+                logger.info("Blocking search for furniture in Tyumen")
+            elif needs_search:
                 try:
                     from bot.services.search_service import search_service as ss
                     result = await asyncio.to_thread(ss.search, user_message)
@@ -156,17 +206,17 @@ class AIService:
                         logger.info(f"Search result: {search_result[:200]}...")
                 except Exception as e:
                     logger.warning(f"Search failed: {e}")
-            
+
             system_with_context = SYSTEM_PROMPT
             if search_result:
                 system_with_context += f"\n\nАктуальная информация из интернета:\n{search_result[:1500]}"
-            
+
             if context_parts:
                 system_with_context += "\n\n" + CONTEXT_PROMPT.format(
                     facts=context_parts[0] if len(context_parts) > 0 else "Нет данных",
                     context=context_parts[1] if len(context_parts) > 1 else "Нет данных"
                 )
-            
+
             logger.info(f"User facts: {user_facts}, context: {len(context_messages)} messages")
         else:
             system_with_context = SYSTEM_PROMPT
