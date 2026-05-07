@@ -195,6 +195,28 @@ class Database:
                     results.append(f"Вопрос: {row.user_message}\nОтвет: {row.bot_response}")
             return results[-5:]
 
+    async def get_recent_messages(self, limit: int = 50) -> list[dict]:
+        async with self._session_factory() as session:
+            from sqlalchemy import select, desc
+            stmt = (
+                select(MessageModel)
+                .order_by(desc(MessageModel.created_at))
+                .limit(limit)
+            )
+            result = await session.execute(stmt)
+            rows = result.scalars().all()
+            return [
+                {
+                    "id": row.id,
+                    "user_id": row.user_id,
+                    "first_name": row.first_name,
+                    "message": row.user_message[:100],
+                    "response": row.bot_response[:150],
+                    "created_at": row.created_at.isoformat() if row.created_at else None,
+                }
+                for row in rows
+            ]
+
     async def save_image(
         self,
         user_id: int,

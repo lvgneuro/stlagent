@@ -101,6 +101,39 @@ async def show_photo_handler(message: Message, bot: Bot) -> None:
         await message.answer(f"Не удалось отправить изображение: {type(e).__name__}")
 
 
+@router.message(Command("диалоги"))
+async def recent_dialogs_handler(message: Message) -> None:
+    if message.from_user and message.from_user.id != 1696951195:
+        await message.answer("У вас нет доступа к этой команде")
+        return
+    
+    await message.answer("Загружаю последние диалоги...")
+    dialogs = await db.get_recent_messages(limit=30)
+    
+    if not dialogs:
+        await message.answer("Нет диалогов")
+        return
+    
+    grouped = {}
+    for d in dialogs:
+        uid = d["user_id"]
+        if uid not in grouped:
+            grouped[uid] = {"first_name": d["first_name"], "messages": []}
+        grouped[uid]["messages"].append(d)
+    
+    text = f"Последние 30 сообщений от {len(grouped)} пользователей:\n\n"
+    
+    for uid, data in list(grouped.items())[:10]:
+        name = data["first_name"] or f"ID:{uid}"
+        msgs = data["messages"]
+        text += f"👤 {name} (ID: {uid}):\n"
+        for m in msgs[:3]:
+            text += f"  Q: {m['message']}...\n"
+            text += f"  A: {m['response']}...\n\n"
+    
+    await message.answer(text)
+
+
 @router.message()
 async def ai_handler(message: Message, bot: Bot) -> None:
     user_id = message.from_user.id if message.from_user else 0
