@@ -52,9 +52,7 @@ class RivalliParser:
         if not self.session:
             return None
         try:
-            async with self.session.get(
-                url, timeout=aiohttp.ClientTimeout(total=30)
-            ) as resp:
+            async with self.session.get(url, timeout=aiohttp.ClientTimeout(total=30)) as resp:
                 if resp.status == 200:
                     return await resp.text()
                 logger.warning(f"Status {resp.status} for {url}")
@@ -65,50 +63,32 @@ class RivalliParser:
 
     def extract_sofa_links(self, html: str, category: str) -> list[tuple[str, str]]:
         links = []
-        pattern = r'<a\s+href="(/catalog/divany/[^/"]+/)"[^>]*>\s*<img[^>]*>'
+        pattern = r'<a[^>]+href="(/catalog/divany/[^/"]+/)"[^>]*>'
         matches = re.findall(pattern, html)
+        seen_urls = set()
+
         for match in matches:
-            if match.strip("/catalog/divany/") and match != "/catalog/divany/":
-                full_url = f"{BASE_URL}{match}"
-                name_match = re.search(
-                    rf'<a\s+href="{re.escape(match)}"[^>]*>([^<]+)</a>', html
-                )
-                name = (
-                    name_match.group(1)
-                    if name_match
-                    else match.strip("/").split("/")[-1]
-                )
-                links.append((name.strip(), full_url))
-        pattern2 = (
-            r'<a\s+class="[^"]*product[^"]*"[^>]+href="(/catalog/divany/[^/"]+/)"[^>]*>'
-        )
-        matches2 = re.findall(pattern2, html)
-        for match in matches2:
-            if match.strip("/catalog/divany/") and match not in [
-                link[1].replace(BASE_URL, "") for link in links
-            ]:
-                full_url = f"{BASE_URL}{match}"
-                name_match = re.search(
-                    rf'<a[^>]+href="{re.escape(match)}"[^>]*>([^<]+)<', html
-                )
-                name = (
-                    name_match.group(1).strip()
-                    if name_match
-                    else match.strip("/").split("/")[-1]
-                )
-                if name:
-                    links.append((name, full_url))
-        pattern3 = r'href="(https://rivalli\.ru/catalog/divany/[^/"]+/)"'
-        matches3 = re.findall(pattern3, html)
-        for match in matches3:
-            if (
-                match not in [link[1] for link in links]
-                and match != BASE_URL + "/catalog/divany/"
-            ):
-                slug = match.replace(BASE_URL + "/catalog/divany/", "").strip("/")
-                if slug and not slug.startswith("filter") and not slug.startswith("?"):
-                    name = slug.replace("-", " ").title()
-                    links.append((name, match))
+            if match == "/catalog/divany/":
+                continue
+            slug = match.strip("/catalog/divany/").strip("/")
+            if not slug or slug.startswith("filter") or slug.startswith("?"):
+                continue
+
+            full_url = f"{BASE_URL}{match}"
+            if full_url in seen_urls:
+                continue
+            seen_urls.add(full_url)
+
+            name = slug.replace("-", " ").title()
+            name_match = re.search(
+                rf'<a[^>]+href="{re.escape(match)}"[^>]*>([^<]+)</a>',
+                html
+            )
+            if name_match:
+                name = name_match.group(1).strip()
+
+            links.append((name, full_url))
+
         return links
 
     def extract_sofa_details(self, html: str, url: str) -> SofaData | None:
@@ -159,9 +139,7 @@ class RivalliParser:
         html = await self.fetch_page(url)
         if not html:
             return []
-        return self.extract_sofa_links(
-            html, url.split("/")[-2] if url.endswith("/") else url.split("/")[-1]
-        )
+        return self.extract_sofa_links(html, url.split("/")[-2] if url.endswith("/") else url.split("/")[-1])
 
     async def parse_sofa_page(self, url: str) -> SofaData | None:
         html = await self.fetch_page(url)
