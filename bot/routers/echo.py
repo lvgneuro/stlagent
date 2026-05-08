@@ -335,10 +335,24 @@ async def ai_handler(message: Message, bot: Bot) -> None:
         sofa_count = await db.get_sofa_count()
         logger.info(f"Sofa count in DB: {sofa_count}")
         if sofa_count > 0:
-            results = await rivalli_search.search(user_text, limit=5)
+            search_query = user_text.lower()
+            for word in ["диван", "про", "что", "знаешь", "какой"]:
+                search_query = search_query.replace(word, "").strip()
+
+            if len(search_query) < 2:
+                all_sofas = await db.get_all_sofas(limit=10)
+                if all_sofas:
+                    response = f"Я знаю {len(all_sofas)} диванов Rivalli. Вот некоторые:\n\n"
+                    for s in all_sofas[:8]:
+                        response += f"• {s.name}: {s.url}\n"
+                    await message.answer(response)
+                    return
+
+            logger.info(f"Searching with: '{search_query}'")
+            results = await rivalli_search.search(search_query, limit=5)
             logger.info(f"Search results: {len(results)}")
             if results:
-                response_text = rivalli_search.format_search_results(results, user_text)
+                response_text = rivalli_search.format_search_results(results, search_query)
                 await message.answer(response_text)
                 await db.save_message(
                     user_id=user_id,

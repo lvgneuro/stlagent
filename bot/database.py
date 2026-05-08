@@ -373,20 +373,32 @@ class Database:
             logger.info(f"Saved sofa: {name}")
 
     async def search_sofas(self, query: str, limit: int = 10) -> list[Sofa]:
+        logger.info(f"search_sofas called with query: '{query}'")
         async with self._session_factory() as session:
-            from sqlalchemy import select
+            from sqlalchemy import select, text
+
+            query_clean = query.lower().strip()
+            logger.info(f"Searching for: {query_clean}")
 
             stmt = (
                 select(SofaModel)
                 .where(
-                    (SofaModel.name.ilike(f"%{query}%"))
-                    | (SofaModel.description.ilike(f"%{query}%"))
-                    | (SofaModel.category.ilike(f"%{query}%"))
+                    (SofaModel.name.ilike(f"%{query_clean}%"))
+                    | (SofaModel.description.ilike(f"%{query_clean}%"))
+                    | (SofaModel.category.ilike(f"%{query_clean}%"))
+                    | (SofaModel.slug.ilike(f"%{query_clean}%"))
                 )
                 .limit(limit)
             )
             result = await session.execute(stmt)
             rows = result.scalars().all()
+            logger.info(f"Found {len(rows)} rows from DB")
+
+            if not rows:
+                all_sofas = await session.execute(select(SofaModel).limit(5))
+                sample = all_sofas.scalars().all()
+                logger.info(f"Sample of DB: {[(s.name, s.slug, s.url[:30]) for s in sample]}")
+
             return [
                 Sofa(
                     id=row.id,
