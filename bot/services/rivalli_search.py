@@ -64,32 +64,37 @@ class RivalliSearch:
                 "Съемный чехол",
                 "Чехол",
                 "Ножки",
+                "Опоры",
                 "Высота сиденья",
                 "Глубина сиденья",
                 "Наполнитель",
                 "Пружинный блок",
                 "Высота матраса",
                 "Ширина подлокотника",
+                "Клиренс",
+                "Посадочных мест",
             }
             for label, value in zip(labels, values):
                 if label in target_labels and len(value.strip()) > 1:
                     parts.append(f"{label}: {value.strip()[:100]}")
         else:
-            for pattern, label in [
-                (r"Механизм[:\s]*([^\n<]{3,80})", "Механизм"),
-                (r"Спальное место[:\s]*([^\n<]{5,80})", "Спальное место"),
-                (r"Съ.мный чехол[:\s]*([^\n<]{2,20})", "Съемный чехол"),
-                (r"Матрас[:\s]*([^\n<]{5,80})", "Матрас"),
-                (r"Каркас[:\s]*([^\n<]{3,60})", "Каркас"),
-                (r"Глубина[:\s]*([^\n<]{3,60})", "Глубина"),
-                (r"Высота[:\s]*([^\n<]{3,60})", "Высота"),
-                (r"Длина[:\s]*([^\n<]{3,60})", "Длина"),
-            ]:
-                match = re.search(pattern, html, re.IGNORECASE)
-                if match:
-                    val = match.group(1).strip()[:80]
-                    if val and len(val) > 2:
-                        parts.append(f"{label}: {val}")
+            matches = re.findall(
+                r'<div class="(left|right)">([^<]*)</div>', html
+            )
+            i = 0
+            while i < len(matches):
+                cls, val = matches[i]
+                if cls == "left":
+                    next_val = ""
+                    if i + 1 < len(matches) and matches[i + 1][0] == "right":
+                        next_val = matches[i + 1][1]
+                    label = re.sub(r"<[^>]+>", "", val).strip()
+                    value = re.sub(r"<[^>]+>", "", next_val).strip()
+                    if label and value and len(value) > 1:
+                        parts.append(f"{label}: {value[:100]}")
+                    i += 2
+                else:
+                    i += 1
 
         desc_match = re.search(
             r'<p[^>]*class="[^"]*desc[^"]*"[^>]*>([^<]+)</p>', html, re.IGNORECASE
