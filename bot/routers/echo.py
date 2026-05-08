@@ -117,6 +117,11 @@ async def index_sofas_handler(message: Message) -> None:
         await message.answer(f"Собрано {len(sofas)} диванов. Сохраняю в базу...")
 
         for sofa in sofas:
+            details = await rivalli_search.fetch_sofa_details(sofa.url)
+            if details:
+                sofa.features = details
+                sofa.description = None
+
             await db.save_sofa(
                 slug=sofa.slug,
                 name=sofa.name,

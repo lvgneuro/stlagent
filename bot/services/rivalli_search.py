@@ -72,10 +72,44 @@ class RivalliSearch:
         desc_match = re.search(
             r'<p[^>]*class="[^"]*desc[^"]*"[^>]*>([^<]+)</p>', html, re.IGNORECASE
         )
+        if not desc_match:
+            desc_match = re.search(
+                r'id="description"[^>]*>([^<]+)', html, re.IGNORECASE
+            )
+        if not desc_match:
+            desc_match = re.search(r"Диван[^-]+-\s*([^\n<]+)", html)
         if desc_match:
             desc = desc_match.group(1).strip()
             if len(desc) > 10:
                 parts.insert(0, desc[:200])
+
+        spec_patterns = [
+            r"Механизм[\s\n]*[:\.]*\s*([^\n<]+)",
+            r"Спальное место[\s\n]*[:\.]*\s*([^\n<]+)",
+            r"Длина[\s\n]*[:\.]*\s*([^\n<]+)",
+            r"Глубина[\s\n]*[:\.]*\s*([^\n<]+)",
+            r"Высота[\s\n]*[:\.]*\s*([^\n<]+)",
+            r"Ширина[\s\n]*[:\.]*\s*([^\n<]+)",
+            r"Высота сиденья[\s\n]*[:\.]*\s*([^\n<]+)",
+            r"Глубина сиденья[\s\n]*[:\.]*\s*([^\n<]+)",
+            r"Матрас[\s\n]*[:\.]*\s*([^\n<]+)",
+            r"Каркас[\s\n]*[:\.]*\s*([^\n<]+)",
+            r"Чехол[\s\n]*[:\.]*\s*([^\n<]+)",
+            r"Ножки[\s\n]*[:\.]*\s*([^\n<]+)",
+            r"Наполнитель[\s\n]*[:\.]*\s*([^\n<]+)",
+            r"Пружинный блок[\s\n]*[:\.]*\s*([^\n<]+)",
+        ]
+
+        for pattern in spec_patterns:
+            match = re.search(pattern, html, re.IGNORECASE)
+            if match:
+                val = match.group(1).strip()[:80]
+                if val and len(val) > 2 and val not in ["", "-"]:
+                    label = pattern.replace("[\s\n]*[:\.]*\s*", "").replace(
+                        "[\s\n]*", ""
+                    )
+                    if f"{label}:" not in "\n".join(parts):
+                        parts.append(f"{label}: {val}")
 
         return "\n".join(parts) if parts else None
 
