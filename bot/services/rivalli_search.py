@@ -12,14 +12,22 @@ class RivalliSearch:
         self.db = db
 
     async def search(self, query: str, limit: int = 10) -> list[Sofa]:
+        logger.info(f"Searching sofas with query: {query}")
         results = await self.db.search_sofas(query, limit)
+        logger.info(f"Found {len(results)} results")
+        for r in results[:3]:
+            logger.info(f"  Result: name={r.name}, url={r.url}")
         return results
 
     async def get_all(self, limit: int = 100) -> list[Sofa]:
-        return await self.db.get_all_sofas(limit)
+        sofas = await self.db.get_all_sofas(limit)
+        logger.info(f"get_all returned {len(sofas)} sofas")
+        return sofas
 
     async def get_count(self) -> int:
-        return await self.db.get_sofa_count()
+        count = await self.db.get_sofa_count()
+        logger.info(f"get_count: {count}")
+        return count
 
     def format_sofa_result(self, sofa: Sofa) -> str:
         text = f"<b>{sofa.name}</b>\n"

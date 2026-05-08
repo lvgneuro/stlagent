@@ -332,7 +332,7 @@ class Database:
                 )
             return None
 
-    async def save_sofa(
+async def save_sofa(
         self,
         slug: str,
         name: str,
@@ -344,11 +344,11 @@ class Database:
     ) -> None:
         async with self._session_factory() as session:
             from sqlalchemy import select
-
             stmt = select(SofaModel).where(SofaModel.slug == slug)
             result = await session.execute(stmt)
             existing = result.scalar_one_or_none()
             now = datetime.now()
+            logger.info(f"Saving sofa: slug={slug}, name={name}, url={url[:50]}...")
             if existing:
                 existing.name = name
                 existing.url = url
