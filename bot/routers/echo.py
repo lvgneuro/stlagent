@@ -28,17 +28,68 @@ def clean_html(text: str) -> str:
 def is_sofa_request(text: str) -> bool:
     text_lower = text.lower()
     keywords = [
-        "диван", "диваны", "кушетка", "угловой", "прямой", "модульн",
-        "механизм", "еврокнижка", "аккордеон", "кровать", "спальн",
-        "раскладн", "трансформер", "софа", "ривалли", "rivalli",
-        "dakar", "dakota", "порто", "орлеан", "лондон", "фарадей",
-        "аруба", "амист", "амиsterdam", "бильбао", "блэквуд", "грэмми",
-        "данте", "джимми", "дижон", "дискавери", "дублин", "женева",
-        "каролина", "кембридж", "кинг", "клайд", "колорадо", "леннокс",
-        "лерой", "люксор", "мадрид", "майя", "манхэттен", "маскот",
-        "мистраль", "парма", "прато", "ричмонд", "сиэтл", "соло",
-        "сомерсет", "сорренто", "темпо", "томас", "тулуза", "турин",
-        "уолтер", "эльзас", "satellite", "space", "elias",
+        "диван",
+        "диваны",
+        "кушетка",
+        "угловой",
+        "прямой",
+        "модульн",
+        "механизм",
+        "еврокнижка",
+        "аккордеон",
+        "кровать",
+        "спальн",
+        "раскладн",
+        "трансформер",
+        "софа",
+        "ривалли",
+        "rivalli",
+        "dakota",
+        "порто",
+        "орлеан",
+        "лондон",
+        "фарадей",
+        "аруба",
+        "амист",
+        "амиsterdam",
+        "бильбао",
+        "блэквуд",
+        "грэмми",
+        "данте",
+        "джимми",
+        "дижон",
+        "дискавери",
+        "дублин",
+        "женева",
+        "каролина",
+        "кембридж",
+        "кинг",
+        "клайд",
+        "колорадо",
+        "леннокс",
+        "лерой",
+        "люксор",
+        "мадрид",
+        "майя",
+        "манхэттен",
+        "маскот",
+        "мистраль",
+        "парма",
+        "прато",
+        "ричмонд",
+        "сиэтл",
+        "соло",
+        "сомерсет",
+        "сорренто",
+        "темпо",
+        "томас",
+        "тулуза",
+        "турин",
+        "уолтер",
+        "эльзас",
+        "satellite",
+        "space",
+        "elias",
     ]
     return any(kw in text_lower for kw in keywords)
 
@@ -334,34 +385,72 @@ async def ai_handler(message: Message, bot: Bot) -> None:
         logger.info(f"Sofa request detected: {user_text[:50]}")
         sofa_count = await db.get_sofa_count()
         logger.info(f"Sofa count in DB: {sofa_count}")
+
+        all_sofas = await db.get_all_sofas(limit=100)
+
+        query_lower = user_text.lower()
+        is_list_request = any(
+            phrase in query_lower
+            for phrase in [
+                "какие",
+                "список",
+                "все",
+                "перечисли",
+                "покажи список",
+                "какой диван",
+                "какие диван",
+                "что есть",
+                "что знаешь",
+            ]
+        )
+
+        if is_list_request and sofa_count > 0:
+            unique_names = list(
+                dict.fromkeys(
+                    s.name
+                    for s in all_sofas
+                    if s.name and not s.name.endswith("Divany")
+                )
+            )
+            response = f"Я вижу {len(unique_names)} диванов Rivalli:\n\n"
+            for name in unique_names[:15]:
+                response += f"• {name}\n"
+            if len(unique_names) > 15:
+                response += f"\n... и ещё {len(unique_names) - 15}"
+            response += "\n\nХочешь подробнее про конкретную модель?"
+            await message.answer(response)
+            return
+
         if sofa_count > 0:
-            search_query = user_text.lower()
+            search_words = query_lower.split()
+            keywords = [w for w in search_words if len(w) > 3]
 
-            russian_stop = ["диван", "про", "что", "знаешь", "какой", "у", "от", "есть", "ли",
-                          "можешь", "предложить", "дорогое", "из", "фабрики", "какой", "какая",
-                          "ривалли", "rivalli", "калинка", "опрайм", "опраим", "посмотри",
-                          "как", "поищи", "найди", "покажи", "расскажи", "есть", "модель", "а"]
-            for word in russian_stop:
-                search_query = search_query.replace(word, " ")
+            if keywords:
+                found_sofas = []
+                for sofa in all_sofas:
+                    name_lower = sofa.name.lower()
+                    if any(kw in name_lower for kw in keywords):
+                        found_sofas.append(sofa)
+                    elif sofa.description and any(
+                        kw in sofa.description.lower() for kw in keywords
+                    ):
+                        found_sofas.append(sofa)
 
-            search_query = re.sub(r'[^\w\s]', ' ', search_query)
-            search_query = ' '.join(search_query.split()).strip()
+                logger.info(f"Found {len(found_sofas)} sofas by keyword matching")
 
-            if len(search_query) >= 2:
-                logger.info(f"Searching Rivalli with: '{search_query}'")
-                results = await rivalli_search.search(search_query, limit=5)
-                logger.info(f"Search results: {len(results)}")
-                if results:
-                    response_text = rivalli_search.format_search_results(results, search_query)
-                    await message.answer(response_text)
-                    await db.save_message(
-                        user_id=user_id,
-                        username=username,
-                        first_name=first_name,
-                        user_message=user_text,
-                        bot_response=response_text[:500],
-                    )
-                    return
+            if found_sofas:
+                response_text = rivalli_search.format_search_results(
+                    found_sofas[:5], user_text[:30]
+                )
+                await message.answer(response_text)
+                await db.save_message(
+                    user_id=user_id,
+                    username=username,
+                    first_name=first_name,
+                    user_message=user_text,
+                    bot_response=response_text[:500],
+                )
+                return
         else:
             await message.answer(
                 "Каталог диванов Rivalli ещё не проиндексирован. "
