@@ -19,13 +19,10 @@ WEB_SEARCH_TOOL = {
     "input_schema": {
         "type": "object",
         "properties": {
-            "query": {
-                "type": "string",
-                "description": "The search query to look up"
-            }
+            "query": {"type": "string", "description": "The search query to look up"}
         },
-        "required": ["query"]
-    }
+        "required": ["query"],
+    },
 }
 
 
@@ -266,62 +263,105 @@ class AIService:
     ) -> str:
         if not self._client:
             return "⚠️ Бот не настроен: отсутствует ANTHROPIC_API_KEY"
-        
+
         if user_id:
             user_facts = await db.get_user_facts(user_id)
             context_messages = await db.search_context(user_id, user_message)
-            
+
             context_parts = []
             if user_facts:
-                context_parts.append("Факты о пользователе:\n" + "\n".join(f"- {k}: {v}" for k, v in user_facts.items()))
-            
+                context_parts.append(
+                    "Факты о пользователе:\n"
+                    + "\n".join(f"- {k}: {v}" for k, v in user_facts.items())
+                )
+
             if context_messages:
-                context_parts.append("Из прошлых разговоров:\n" + "\n".join(f"- {m[:150]}" for m in context_messages[-3:]))
-            
-            search_indicators = ["погода", "новости", "сегодня", "сейчас", "вчера", "курс", "цена", "найти", "узнать", "произошло", "случилось", "магазин", "купить", "адрес", "где находится", "салон", "торговый"]
-            image_triggers = ["нарисуй", "создай картинку", "сгенерируй картинку", "нарисуй изображение", "создай изображение"]
-            
+                context_parts.append(
+                    "Из прошлых разговоров:\n"
+                    + "\n".join(f"- {m[:150]}" for m in context_messages[-3:])
+                )
+
+            search_indicators = [
+                "погода",
+                "новости",
+                "сегодня",
+                "сейчас",
+                "вчера",
+                "курс",
+                "цена",
+                "найти",
+                "узнать",
+                "произошло",
+                "случилось",
+                "магазин",
+                "купить",
+                "адрес",
+                "где находится",
+                "салон",
+                "торговый",
+            ]
+            image_triggers = [
+                "нарисуй",
+                "создай картинку",
+                "сгенерируй картинку",
+                "нарисуй изображение",
+                "создай изображение",
+            ]
+
             needs_image = any(word in user_message.lower() for word in image_triggers)
             image_url = ""
-            
+
             if needs_image:
                 try:
                     from bot.services.image_service import image_service as ims
+
                     if ims.is_configured():
                         prompt = user_message
                         for word in image_triggers:
                             prompt = prompt.replace(word.lower(), "").strip()
-                        
+
                         result = await asyncio.to_thread(ims.generate, prompt)
-                        
+
                         if "error" in result:
                             logger.warning(f"Image generation error: {result['error']}")
                         elif "url" in result:
                             image_url = result["url"]
                 except Exception as e:
                     logger.warning(f"Image generation failed: {e}")
-            
-            url_pattern = re.compile(r'https?://[^\s]+')
+
+            url_pattern = re.compile(r"https?://[^\s]+")
             urls = url_pattern.findall(user_message)
-            
+
             furniture_tyumen_patterns = [
-                "мягк", "диван", "кровать", "мебель", "купить", 
-                "салон", "магазин", "гарнитур", "мебельн", "кухн"
+                "мягк",
+                "диван",
+                "кровать",
+                "мебель",
+                "купить",
+                "салон",
+                "магазин",
+                "гарнитур",
+                "мебельн",
+                "кухн",
             ]
             user_lower = user_message.lower()
             is_tyumen_furniture = (
-                ("тюмень" in user_lower or "тюмени" in user_lower)
-                and any(word in user_lower for word in furniture_tyumen_patterns)
+                "тюмень" in user_lower or "тюмени" in user_lower
+            ) and any(word in user_lower for word in furniture_tyumen_patterns)
+            logger.info(
+                f"Furniture check: is_tyumen_furniture={is_tyumen_furniture}, msg={user_message[:40]}"
             )
-            logger.info(f"Furniture check: is_tyumen_furniture={is_tyumen_furniture}, msg={user_message[:40]}")
-            
-            needs_search = any(word in user_lower for word in search_indicators) or bool(urls)
+
+            needs_search = any(
+                word in user_lower for word in search_indicators
+            ) or bool(urls)
             search_result = ""
             if is_tyumen_furniture:
                 logger.info("Blocking search for furniture in Tyumen")
             elif needs_search:
                 try:
                     from bot.services.search_service import search_service as ss
+
                     result = await asyncio.to_thread(ss.search, user_message)
                     if result and result.strip():
                         search_result = result
@@ -331,29 +371,37 @@ class AIService:
 
             system_with_context = SYSTEM_PROMPT
             if search_result:
-                system_with_context += f"\n\nАктуальная информация из интернета:\n{search_result[:1500]}"
+                system_with_context += (
+                    f"\n\nАктуальная информация из интернета:\n{search_result[:1500]}"
+                )
 
             if context_parts:
                 system_with_context += "\n\n" + CONTEXT_PROMPT.format(
                     facts=context_parts[0] if len(context_parts) > 0 else "Нет данных",
-                    context=context_parts[1] if len(context_parts) > 1 else "Нет данных"
+                    context=context_parts[1]
+                    if len(context_parts) > 1
+                    else "Нет данных",
                 )
 
-            logger.info(f"User facts: {user_facts}, context: {len(context_messages)} messages")
+            logger.info(
+                f"User facts: {user_facts}, context: {len(context_messages)} messages"
+            )
         else:
             system_with_context = SYSTEM_PROMPT
             conversation_history = []
-        
+
         messages = []
         if conversation_history:
             for msg in conversation_history:
                 content = msg.get("content", "").strip()
                 if content:
-                    messages.append({"role": msg.get("role", "user"), "content": content})
-        
+                    messages.append(
+                        {"role": msg.get("role", "user"), "content": content}
+                    )
+
         if not user_message or not user_message.strip():
             return "Извини, я не получил текст сообщения. Попробуй еще раз."
-        
+
         messages.append({"role": "user", "content": user_message})
 
         try:
@@ -366,27 +414,29 @@ class AIService:
             )
 
             logger.info(f"Response stop_reason: {response.stop_reason}")
-            
+
             text = None
             for block in response.content:
                 if hasattr(block, "text"):
                     text = block.text
                     break
-            
+
             if text and user_id:
                 await self._extract_and_save_facts(user_message, text, user_id)
-            
+
             response_text = text if text else "Не удалось получить ответ"
-            
+
             if image_url:
                 response_text += f"\n\nВот изображение по твоему запросу: {image_url}"
-            
+
             return response_text
         except Exception as e:
             logger.error(f"Error getting AI response: {e}", exc_info=True)
             return f"Sorry, I'm having trouble answering right now. ({type(e).__name__}: {e})"
 
-    async def _extract_and_save_facts(self, user_message: str, bot_response: str, user_id: int) -> None:
+    async def _extract_and_save_facts(
+        self, user_message: str, bot_response: str, user_id: int
+    ) -> None:
         logger.debug(f"Extracting facts for user {user_id}: {user_message[:50]}...")
         try:
             extraction_prompt = f"""Извлеки факты о пользователе из этого разговора.
@@ -411,18 +461,18 @@ class AIService:
             response = await self._client.messages.create(
                 model="claude-sonnet-4-20250514",
                 max_tokens=500,
-                messages=[{"role": "user", "content": extraction_prompt}]
+                messages=[{"role": "user", "content": extraction_prompt}],
             )
 
             text = response.content[0].text if response.content else ""
-            
+
             if text.startswith("```json"):
                 text = text[7:]
             if text.startswith("```"):
                 text = text[3:]
             if text.endswith("```"):
                 text = text[:-3]
-            
+
             try:
                 facts = json.loads(text.strip())
                 if isinstance(facts, list):
@@ -434,16 +484,20 @@ class AIService:
                                 fact_value=fact["fact_value"],
                                 context=f"{user_message[:100]} -> {bot_response[:100]}",
                             )
-                logger.info(f"Saved {len(facts) if isinstance(facts, list) else 0} facts for user {user_id}")
+                logger.info(
+                    f"Saved {len(facts) if isinstance(facts, list) else 0} facts for user {user_id}"
+                )
             except json.JSONDecodeError:
                 logger.warning(f"Failed to parse facts JSON: {text[:200]}")
         except Exception as e:
             logger.error(f"Error extracting facts: {e}")
 
-    async def analyze_image(self, image_base64: str, question: str = "Опиши что ты видишь") -> str:
+    async def analyze_image(
+        self, image_base64: str, question: str = "Опиши что ты видишь"
+    ) -> str:
         if not self._client:
             return "⚠️ Бот не настроен: отсутствует ANTHROPIC_API_KEY"
-        
+
         try:
             content = [
                 {"type": "text", "text": question},
@@ -452,32 +506,32 @@ class AIService:
                     "source": {
                         "type": "base64",
                         "media_type": "image/jpeg",
-                        "data": image_base64
-                    }
-                }
+                        "data": image_base64,
+                    },
+                },
             ]
-            
+
             response = await self._client.messages.create(
                 model="claude-sonnet-4-20250514",
                 max_tokens=1024,
                 messages=[{"role": "user", "content": content}],
             )
-            
+
             text = None
             for block in response.content:
                 if hasattr(block, "text"):
                     text = block.text
                     break
-            
+
             return text if text else "Не удалось проанализировать изображение"
         except Exception as e:
             logger.error(f"Error analyzing image: {e}", exc_info=True)
             return f"Ошибка при анализе изображения: {type(e).__name__}: {e}"
-    
+
     async def edit_image(self, image_base64: str, prompt: str) -> dict:
         if not image_service.is_configured():
             return {"error": "Сервис изображений не настроен"}
-        
+
         return image_service.edit_image(image_base64, prompt)
 
 

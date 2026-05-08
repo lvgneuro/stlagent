@@ -153,14 +153,17 @@ class RivalliParser:
         for cat_url in CATEGORY_URLS:
             logger.info(f"Parsing category: {cat_url}")
             sofa_links = await self.parse_catalog_page(cat_url)
+            logger.info(f"Found {len(sofa_links)} links in category")
             for name, url in sofa_links:
                 if url not in seen_urls:
                     seen_urls.add(url)
-                    await asyncio.sleep(0.3)
+                    await asyncio.sleep(0.5)
                     sofa = await self.parse_sofa_page(url)
                     if sofa:
                         all_sofas.append(sofa)
                         logger.info(f"Parsed: {sofa.name}")
+                    else:
+                        logger.warning(f"Failed to parse: {url}")
         logger.info(f"Total sofas indexed: {len(all_sofas)}")
         return all_sofas
 

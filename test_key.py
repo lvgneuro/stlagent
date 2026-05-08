@@ -5,7 +5,9 @@ from anthropic import AsyncAnthropic
 
 
 async def main():
-    client = AsyncAnthropic(api_key="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")
+    client = AsyncAnthropic(
+        api_key="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"
+    )
     try:
         response = await client.messages.create(
             model="claude-haiku-4-5-20251001",

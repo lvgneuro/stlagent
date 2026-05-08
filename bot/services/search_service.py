@@ -32,23 +32,23 @@ class SearchService:
         except Exception as e:
             logger.warning(f"DuckDuckGo search failed: {e}")
             return ""
-    
+
     def _search_with_fallback(self, query: str) -> str:
         result = self._search_duckduckgo(query)
         if result:
             return result
-        
+
         fallback_queries = [
             f"{query} адрес",
             f"{query} магазин",
             f"{query} салон",
             f"{query} site:2gis.ru",
             f"{query} Тюмень адрес где купить",
-            f"калинка диваны тюмень",
-            f"калинка мебель тюмень официальный сайт",
-            f'"Калинка" диван Тюмень купить',
+            "калинка диваны тюмень",
+            "калинка мебель тюмень официальный сайт",
+            '"Калинка" диван Тюмень купить',
         ]
-        
+
         seen = set()
         for q in fallback_queries:
             if q.lower() in seen:
@@ -57,7 +57,7 @@ class SearchService:
             result = self._search_duckduckgo(q)
             if result:
                 return result
-        
+
         return ""
 
     def search(self, query: str) -> str:
@@ -68,17 +68,26 @@ class SearchService:
             summary = []
             for r in results["results"]:
                 summary.append(f"- {r['title']}: {r['content'][:200]}...")
-            
+
             tavily_result = "\n".join(summary)
-            
-            city_indicators = ["тюмень", "екатеринбург", "москва", "спб", "питер", "новосибирск", "челябинск", "казани"]
+
+            city_indicators = [
+                "тюмень",
+                "екатеринбург",
+                "москва",
+                "спб",
+                "питер",
+                "новосибирск",
+                "челябинск",
+                "казани",
+            ]
             needs_local = any(word in query.lower() for word in city_indicators)
-            
+
             if needs_local:
                 ddg_result = self._search_with_fallback(query)
                 if ddg_result:
                     return tavily_result + "\n\nЛокальные данные:\n" + ddg_result
-            
+
             return tavily_result
         except Exception as e:
             logger.error(f"Search error: {e}")

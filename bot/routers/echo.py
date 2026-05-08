@@ -334,9 +334,12 @@ async def ai_handler(message: Message, bot: Bot) -> None:
             return
 
     if is_sofa_request(user_text):
+        logger.info(f"Sofa request detected: {user_text[:50]}")
         sofa_count = await db.get_sofa_count()
+        logger.info(f"Sofa count in DB: {sofa_count}")
         if sofa_count > 0:
             results = await rivalli_search.search(user_text, limit=5)
+            logger.info(f"Search results: {len(results)}")
             if results:
                 response_text = rivalli_search.format_search_results(results, user_text)
                 await message.answer(response_text)
