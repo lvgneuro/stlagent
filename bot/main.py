@@ -71,7 +71,7 @@ async def on_startup(bot: Bot) -> None:
     await bot.set_webhook(WEBHOOK_URL)
     logger.info(f"Webhook set to {WEBHOOK_URL}")
 
-sofa_count = await db.get_sofa_count()
+    sofa_count = await db.get_sofa_count()
     logger.info(f"Sofa count in DB: {sofa_count}")
     if sofa_count == 0:
         logger.info("No sofas in database, starting initial indexing...")
