@@ -336,19 +336,13 @@ async def ai_handler(message: Message, bot: Bot) -> None:
         logger.info(f"Sofa count in DB: {sofa_count}")
         if sofa_count > 0:
             search_query = user_text.lower()
-            for word in ["диван", "про", "что", "знаешь", "какой"]:
+            for word in ["диван", "про", "что", "знаешь", "какой", "у", "от"]:
                 search_query = search_query.replace(word, "").strip()
 
             if len(search_query) < 2:
-                all_sofas = await db.get_all_sofas(limit=10)
-                if all_sofas:
-                    response = f"Я знаю {len(all_sofas)} диванов Rivalli. Вот некоторые:\n\n"
-                    for s in all_sofas[:8]:
-                        response += f"• {s.name}: {s.url}\n"
-                    await message.answer(response)
-                    return
+                continue
 
-            logger.info(f"Searching with: '{search_query}'")
+            logger.info(f"Searching Rivalli with: '{search_query}'")
             results = await rivalli_search.search(search_query, limit=5)
             logger.info(f"Search results: {len(results)}")
             if results:
@@ -360,12 +354,6 @@ async def ai_handler(message: Message, bot: Bot) -> None:
                     first_name=first_name,
                     user_message=user_text,
                     bot_response=response_text[:500],
-                )
-                return
-            else:
-                await message.answer(
-                    f"Я нашёл в каталоге {sofa_count} диванов Rivalli, но по вашему запросу ничего не нашлось. "
-                    "Попробуйте переформулировать или спросите что-то конкретное."
                 )
                 return
         else:
