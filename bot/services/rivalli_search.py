@@ -46,70 +46,58 @@ class RivalliSearch:
             return None
 
         parts = []
-        patterns = [
-            (r"Механизм[:\s]*([^\n<]+)", "Механизм"),
-            (r"Спальное место[:\s]*([^\n<]+)", "Спальное место"),
-            (r"Длина[:\s]*([^\n<]+)", "Длина"),
-            (r"Ширина[:\s]*([^\n<]+)", "Ширина"),
-            (r"Глубина[:\s]*([^\n<]+)", "Глубина"),
-            (r"Высота[:\s]*([^\n<]+)", "Высота"),
-            (r"Глубина сиденья[:\s]*([^\n<]+)", "Глубина сиденья"),
-            (r"Высота сиденья[:\s]*([^\n<]+)", "Высота сиденья"),
-            (r"Материал[:\s]*([^\n<]+)", "Материал"),
-            (r"Каркас[:\s]*([^\n<]+)", "Каркас"),
-            (r"Ножки[:\s]*([^\n<]+)", "Ножки"),
-            (r"Матрас[:\s]*([^\n<]+)", "Матрас"),
-            (r"Наполнитель[:\s]*([^\n<]+)", "Наполнитель"),
-        ]
 
-        for pattern, label in patterns:
-            match = re.search(pattern, html, re.IGNORECASE)
-            if match:
-                val = match.group(1).strip()[:80]
-                if val and len(val) > 2:
-                    parts.append(f"{label}: {val}")
+        all_cells = re.findall(r"<td[^>]*>([^<]+)</td>", html)
+        if len(all_cells) >= 2:
+            labels = [all_cells[i] for i in range(0, len(all_cells) - 1, 2)]
+            values = [all_cells[i] for i in range(1, len(all_cells), 2)]
+
+            target_labels = {
+                "Механизм",
+                "Спальное место",
+                "Длина",
+                "Глубина",
+                "Высота",
+                "Ширина",
+                "Матрас",
+                "Каркас",
+                "Съемный чехол",
+                "Чехол",
+                "Ножки",
+                "Высота сиденья",
+                "Глубина сиденья",
+                "Наполнитель",
+                "Пружинный блок",
+                "Высота матраса",
+                "Ширина подлокотника",
+            }
+            for label, value in zip(labels, values):
+                if label in target_labels and len(value.strip()) > 1:
+                    parts.append(f"{label}: {value.strip()[:100]}")
+        else:
+            for pattern, label in [
+                (r"Механизм[:\s]*([^\n<]{3,80})", "Механизм"),
+                (r"Спальное место[:\s]*([^\n<]{5,80})", "Спальное место"),
+                (r"Съ.мный чехол[:\s]*([^\n<]{2,20})", "Съемный чехол"),
+                (r"Матрас[:\s]*([^\n<]{5,80})", "Матрас"),
+                (r"Каркас[:\s]*([^\n<]{3,60})", "Каркас"),
+                (r"Глубина[:\s]*([^\n<]{3,60})", "Глубина"),
+                (r"Высота[:\s]*([^\n<]{3,60})", "Высота"),
+                (r"Длина[:\s]*([^\n<]{3,60})", "Длина"),
+            ]:
+                match = re.search(pattern, html, re.IGNORECASE)
+                if match:
+                    val = match.group(1).strip()[:80]
+                    if val and len(val) > 2:
+                        parts.append(f"{label}: {val}")
 
         desc_match = re.search(
             r'<p[^>]*class="[^"]*desc[^"]*"[^>]*>([^<]+)</p>', html, re.IGNORECASE
         )
-        if not desc_match:
-            desc_match = re.search(
-                r'id="description"[^>]*>([^<]+)', html, re.IGNORECASE
-            )
-        if not desc_match:
-            desc_match = re.search(r"Диван[^-]+-\s*([^\n<]+)", html)
         if desc_match:
             desc = desc_match.group(1).strip()
             if len(desc) > 10:
                 parts.insert(0, desc[:200])
-
-        spec_patterns = [
-            r"Механизм[\s\n]*[:\.]*\s*([^\n<]+)",
-            r"Спальное место[\s\n]*[:\.]*\s*([^\n<]+)",
-            r"Длина[\s\n]*[:\.]*\s*([^\n<]+)",
-            r"Глубина[\s\n]*[:\.]*\s*([^\n<]+)",
-            r"Высота[\s\n]*[:\.]*\s*([^\n<]+)",
-            r"Ширина[\s\n]*[:\.]*\s*([^\n<]+)",
-            r"Высота сиденья[\s\n]*[:\.]*\s*([^\n<]+)",
-            r"Глубина сиденья[\s\n]*[:\.]*\s*([^\n<]+)",
-            r"Матрас[\s\n]*[:\.]*\s*([^\n<]+)",
-            r"Каркас[\s\n]*[:\.]*\s*([^\n<]+)",
-            r"Чехол[\s\n]*[:\.]*\s*([^\n<]+)",
-            r"Ножки[\s\n]*[:\.]*\s*([^\n<]+)",
-            r"Наполнитель[\s\n]*[:\.]*\s*([^\n<]+)",
-            r"Пружинный блок[\s\n]*[:\.]*\s*([^\n<]+)",
-        ]
-
-        for pattern in spec_patterns:
-            match = re.search(pattern, html, re.IGNORECASE)
-            if match:
-                val = match.group(1).strip()[:80]
-                if val and len(val) > 2 and val not in ["", "-"]:
-                    label = pattern.replace("[\s\n]*[:\.]*\s*", "").replace(
-                        "[\s\n]*", ""
-                    )
-                    if f"{label}:" not in "\n".join(parts):
-                        parts.append(f"{label}: {val}")
 
         return "\n".join(parts) if parts else None
 
@@ -135,7 +123,9 @@ class RivalliSearch:
         text = f"<b>{sofa.name}</b>\n"
         if sofa.category:
             text += f"📁 {sofa.category}\n"
-        if sofa.description:
+        if sofa.features:
+            text += f"{sofa.features}\n"
+        elif sofa.description:
             desc = (
                 sofa.description[:200] + "..."
                 if len(sofa.description or "") > 200
@@ -151,8 +141,11 @@ class RivalliSearch:
         text = f'Найдено {len(results)} диванов по запросу "{query}":\n\n'
         for i, sofa in enumerate(results[:5], 1):
             text += f"{i}. <b>{sofa.name}</b>\n"
-            if sofa.description:
-                text += f"   {sofa.description[:100]}...\n"
+            if sofa.features:
+                feats = sofa.features[:150].replace("\n", " | ")
+                text += f"   {feats}...\n"
+            elif sofa.description:
+                text += f"   {sofa.description[:80]}...\n"
             text += f"   🔗 {sofa.url}\n\n"
         if len(results) > 5:
             text += f"... и еще {len(results) - 5} диванов"
