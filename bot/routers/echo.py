@@ -454,13 +454,16 @@ async def ai_handler(message: Message, bot: Bot) -> None:
                         found_sofas[:5], user_text[:30]
                     )
                 await message.answer(response_text)
-                await db.save_message(
-                    user_id=user_id,
-                    username=username,
-                    first_name=first_name,
-                    user_message=user_text,
-                    bot_response=response_text[:500],
-                )
+                try:
+                    await db.save_message(
+                        user_id=user_id,
+                        username=username,
+                        first_name=first_name,
+                        user_message=user_text,
+                        bot_response=response_text[:500],
+                    )
+                except Exception as e:
+                    logger.error(f"Failed to save sofa message: {e}")
                 return
         else:
             await message.answer(
@@ -490,10 +493,13 @@ async def ai_handler(message: Message, bot: Bot) -> None:
     await message.answer(response)
     await thinking_msg.delete()
 
-    await db.save_message(
-        user_id=user_id,
-        username=username,
-        first_name=first_name,
-        user_message=user_text,
-        bot_response=response[:5000],
-    )
+    try:
+        await db.save_message(
+            user_id=user_id,
+            username=username,
+            first_name=first_name,
+            user_message=user_text,
+            bot_response=response[:5000],
+        )
+    except Exception as e:
+        logger.error(f"Failed to save message: {e}")
