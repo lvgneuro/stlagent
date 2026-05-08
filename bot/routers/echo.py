@@ -339,23 +339,21 @@ async def ai_handler(message: Message, bot: Bot) -> None:
             for word in ["диван", "про", "что", "знаешь", "какой", "у", "от"]:
                 search_query = search_query.replace(word, "").strip()
 
-            if len(search_query) < 2:
-                continue
-
-            logger.info(f"Searching Rivalli with: '{search_query}'")
-            results = await rivalli_search.search(search_query, limit=5)
-            logger.info(f"Search results: {len(results)}")
-            if results:
-                response_text = rivalli_search.format_search_results(results, search_query)
-                await message.answer(response_text)
-                await db.save_message(
-                    user_id=user_id,
-                    username=username,
-                    first_name=first_name,
-                    user_message=user_text,
-                    bot_response=response_text[:500],
-                )
-                return
+            if len(search_query) >= 2:
+                logger.info(f"Searching Rivalli with: '{search_query}'")
+                results = await rivalli_search.search(search_query, limit=5)
+                logger.info(f"Search results: {len(results)}")
+                if results:
+                    response_text = rivalli_search.format_search_results(results, search_query)
+                    await message.answer(response_text)
+                    await db.save_message(
+                        user_id=user_id,
+                        username=username,
+                        first_name=first_name,
+                        user_message=user_text,
+                        bot_response=response_text[:500],
+                    )
+                    return
         else:
             await message.answer(
                 "Каталог диванов Rivalli ещё не проиндексирован. "
