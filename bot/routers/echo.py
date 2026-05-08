@@ -336,8 +336,12 @@ async def ai_handler(message: Message, bot: Bot) -> None:
         logger.info(f"Sofa count in DB: {sofa_count}")
         if sofa_count > 0:
             search_query = user_text.lower()
-            for word in ["диван", "про", "что", "знаешь", "какой", "у", "от"]:
-                search_query = search_query.replace(word, "").strip()
+            stop_words = ["диван", "про", "что", "знаешь", "какой", "у", "от", "есть", "ли", "можешь", "предложить", "дорогое", "из", "фабрики", "какой", "какая", "ривалли", "rivalli", "калинка", "опрайм", "опраим"]
+            for word in stop_words:
+                search_query = search_query.replace(word, "")
+
+            import re
+            search_query = re.sub(r'[^\w\s]', '', search_query).strip()
 
             if len(search_query) >= 2:
                 logger.info(f"Searching Rivalli with: '{search_query}'")
