@@ -1,6 +1,9 @@
 from __future__ import annotations
 
 import logging
+import re
+
+import aiohttp
 
 from bot.database import db, Sofa
 
@@ -10,6 +13,71 @@ logger = logging.getLogger(__name__)
 class RivalliSearch:
     def __init__(self) -> None:
         self.db = db
+        self._session: aiohttp.ClientSession | None = None
+
+    async def _get_session(self) -> aiohttp.ClientSession:
+        if self._session is None or self._session.closed:
+            self._session = aiohttp.ClientSession(
+                headers={
+                    "User-Agent": (
+                        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                        "AppleWebKit/537.36 (KHTML, like Gecko) "
+                        "Chrome/120.0.0.0 Safari/537.36"
+                    ),
+                }
+            )
+        return self._session
+
+    async def close(self) -> None:
+        if self._session and not self._session.closed:
+            await self._session.close()
+
+    async def fetch_sofa_details(self, url: str) -> str | None:
+        session = await self._get_session()
+        try:
+            async with session.get(
+                url, timeout=aiohttp.ClientTimeout(total=15)
+            ) as resp:
+                if resp.status != 200:
+                    return None
+                html = await resp.text()
+        except Exception as e:
+            logger.warning(f"Failed to fetch {url}: {e}")
+            return None
+
+        parts = []
+        patterns = [
+            (r"Механизм[:\s]*([^\n<]+)", "Механизм"),
+            (r"Спальное место[:\s]*([^\n<]+)", "Спальное место"),
+            (r"Длина[:\s]*([^\n<]+)", "Длина"),
+            (r"Ширина[:\s]*([^\n<]+)", "Ширина"),
+            (r"Глубина[:\s]*([^\n<]+)", "Глубина"),
+            (r"Высота[:\s]*([^\n<]+)", "Высота"),
+            (r"Глубина сиденья[:\s]*([^\n<]+)", "Глубина сиденья"),
+            (r"Высота сиденья[:\s]*([^\n<]+)", "Высота сиденья"),
+            (r"Материал[:\s]*([^\n<]+)", "Материал"),
+            (r"Каркас[:\s]*([^\n<]+)", "Каркас"),
+            (r"Ножки[:\s]*([^\n<]+)", "Ножки"),
+            (r"Матрас[:\s]*([^\n<]+)", "Матрас"),
+            (r"Наполнитель[:\s]*([^\n<]+)", "Наполнитель"),
+        ]
+
+        for pattern, label in patterns:
+            match = re.search(pattern, html, re.IGNORECASE)
+            if match:
+                val = match.group(1).strip()[:80]
+                if val and len(val) > 2:
+                    parts.append(f"{label}: {val}")
+
+        desc_match = re.search(
+            r'<p[^>]*class="[^"]*desc[^"]*"[^>]*>([^<]+)</p>', html, re.IGNORECASE
+        )
+        if desc_match:
+            desc = desc_match.group(1).strip()
+            if len(desc) > 10:
+                parts.insert(0, desc[:200])
+
+        return "\n".join(parts) if parts else None
 
     async def search(self, query: str, limit: int = 10) -> list[Sofa]:
         logger.info(f"Searching sofas with query: {query}")

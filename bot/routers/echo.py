@@ -439,9 +439,15 @@ async def ai_handler(message: Message, bot: Bot) -> None:
                 logger.info(f"Found {len(found_sofas)} sofas by keyword matching")
 
             if found_sofas:
-                response_text = rivalli_search.format_search_results(
-                    found_sofas[:5], user_text[:30]
-                )
+                first = found_sofas[0]
+                details = await rivalli_search.fetch_sofa_details(first.url)
+
+                if details:
+                    response_text = f"<b>{first.name}</b>\n{details}\n\n🔗 {first.url}"
+                else:
+                    response_text = rivalli_search.format_search_results(
+                        found_sofas[:5], user_text[:30]
+                    )
                 await message.answer(response_text)
                 await db.save_message(
                     user_id=user_id,
