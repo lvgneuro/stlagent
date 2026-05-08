@@ -332,7 +332,7 @@ class Database:
                 )
             return None
 
-async def save_sofa(
+    async def save_sofa(
         self,
         slug: str,
         name: str,
