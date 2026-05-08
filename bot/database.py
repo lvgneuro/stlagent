@@ -23,8 +23,8 @@ class MessageModel(Base):
     user_id = Column(BigInteger, nullable=False, index=True)
     username = Column(String, nullable=True)
     first_name = Column(String, nullable=True)
-    user_message = Column(String, nullable=False)
-    bot_response = Column(String, nullable=False)
+    user_message = Column(Text, nullable=False)
+    bot_response = Column(Text, nullable=False)
     created_at = Column(DateTime, default=datetime.now)
 
 
