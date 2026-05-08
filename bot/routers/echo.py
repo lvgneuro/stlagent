@@ -340,7 +340,6 @@ async def ai_handler(message: Message, bot: Bot) -> None:
             for word in stop_words:
                 search_query = search_query.replace(word, "")
 
-            import re
             search_query = re.sub(r'[^\w\s]', '', search_query).strip()
 
             if len(search_query) >= 2:
