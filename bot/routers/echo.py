@@ -495,5 +495,5 @@ async def ai_handler(message: Message, bot: Bot) -> None:
         username=username,
         first_name=first_name,
         user_message=user_text,
-        bot_response=response,
+        bot_response=response[:5000],
     )
