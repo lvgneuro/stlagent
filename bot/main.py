@@ -73,28 +73,26 @@ async def on_startup(bot: Bot) -> None:
 
     sofa_count = await db.get_sofa_count()
     logger.info(f"Sofa count in DB: {sofa_count}")
-    if sofa_count == 0:
-        logger.info("No sofas in database, starting initial indexing...")
-        try:
-            from bot.services.rivalli_parser import run_indexing
-            sofas = await run_indexing()
-            logger.info(f"Indexed {len(sofas)} sofas from parser")
-            saved_count = 0
-            for sofa in sofas:
-                await db.save_sofa(
-                    slug=sofa.slug,
-                    name=sofa.name,
-                    url=sofa.url,
-                    category=sofa.category,
-                    description=sofa.description,
-                    features=sofa.features,
-                    image_urls=",".join(sofa.image_urls) if sofa.image_urls else None,
-                )
-                saved_count += 1
-            final_count = await db.get_sofa_count()
-            logger.info(f"Initial indexing completed. Saved: {saved_count}, Total in DB: {final_count}")
-        except Exception as e:
-            logger.error(f"Initial indexing failed: {e}")
+
+    logger.info("Starting initial indexing (synchronous)...")
+    try:
+        from bot.services.rivalli_parser import run_indexing
+        sofas = await run_indexing()
+        logger.info(f"Indexed {len(sofas)} sofas from parser")
+        for sofa in sofas:
+            await db.save_sofa(
+                slug=sofa.slug,
+                name=sofa.name,
+                url=sofa.url,
+                category=sofa.category,
+                description=sofa.description,
+                features=sofa.features,
+                image_urls=",".join(sofa.image_urls) if sofa.image_urls else None,
+            )
+        final_count = await db.get_sofa_count()
+        logger.info(f"Initial indexing completed. Total in DB: {final_count}")
+    except Exception as e:
+        logger.error(f"Initial indexing failed: {e}")
 
     asyncio.create_task(daily_sofa_indexing(bot))
 
