@@ -155,6 +155,7 @@ async def db_fix_handler(message: Message) -> None:
             conn.execute(text("ALTER TABLE user_facts ALTER COLUMN fact_value TYPE TEXT"))
             conn.execute(text("ALTER TABLE user_facts ALTER COLUMN context TYPE TEXT"))
             conn.execute(text("ALTER TABLE user_images ALTER COLUMN description TYPE TEXT"))
+            conn.execute(text("CREATE TABLE IF NOT EXISTS conversations (id SERIAL PRIMARY KEY, user_id BIGINT NOT NULL, last_message_at TIMESTAMP DEFAULT NOW(), reminder_sent_15min INTEGER DEFAULT 0, reminder_sent_3h INTEGER DEFAULT 0, reminder_sent_1d INTEGER DEFAULT 0, last_reminder_at TIMESTAMP, topic TEXT, last_bot_message TEXT, created_at TIMESTAMP DEFAULT NOW())"))
             conn.commit()
         await message.answer("✅ Схема БД обновлена. VARCHAR → TEXT")
     except Exception as e:
@@ -340,6 +341,7 @@ async def ai_handler(message: Message, bot: Bot) -> None:
                 logger.info(f"Image analysis: {response[:100]}...")
                 await message.answer(response)
                 await analyzing_msg.delete()
+                await db.touch_conversation(user_id, last_bot_message=response[:200])
 
                 user_text = "[Изображение]"
                 await db.save_message(
@@ -446,6 +448,7 @@ async def ai_handler(message: Message, bot: Bot) -> None:
                 response += f"\n... и ещё {len(unique_names) - 15}"
             response += "\n\nХочешь подробнее про конкретную модель?"
             await message.answer(response)
+            await db.touch_conversation(user_id, last_bot_message=response[:200])
             return
 
         if sofa_count > 0:
@@ -543,6 +546,7 @@ async def ai_handler(message: Message, bot: Bot) -> None:
     logger.info(f"Sending response: {response[:100]}...")
     await message.answer(response)
     await thinking_msg.delete()
+    await db.touch_conversation(user_id, last_bot_message=response[:200])
 
     try:
         await db.save_message(

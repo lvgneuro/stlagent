@@ -20,6 +20,7 @@ from bot.config import (
 )
 from bot.routers import echo
 from bot.database import db
+from bot.services.ai_service import get_ai_service
 
 logging.basicConfig(level=logging.INFO, stream=sys.stdout)
 
@@ -80,6 +81,33 @@ async def daily_sofa_indexing(bot: Bot) -> None:
         await _run_indexing(bot)
 
 
+REMINDER_INTERVALS = ["15min", "3h", "1d"]
+REMINDER_CHECK_PERIOD = 60
+
+
+async def reminder_worker(bot: Bot) -> None:
+    while True:
+        try:
+            for interval in REMINDER_INTERVALS:
+                pending = await db.get_pending_reminders([interval])
+                for user_id, topic, last_msg in pending:
+                    if last_msg:
+                        prompt = f"Клиент не ответил после того как бот отправил:\n\"{last_msg[:500]}\"\n\nЕсли topic: {topic or 'неизвестно'}.\n\nОтправь клиенту мягкое напоминание, 1-2 предложения. Не дави, не продавай агрессивно. Например: «Не нашли то, что искали? Я на связи, если появятся вопросы.»"
+                    else:
+                        prompt = "Отправь клиенту мягкое напоминание, 1-2 предложения. Не дави, не продавай агрессивно."
+
+                    response = await get_ai_service().get_response(prompt, [], user_id)
+                    response = response.replace("\\n\\n", "\n\n").replace("\\n", "\n")
+                    try:
+                        await bot.send_message(user_id, response[:500])
+                        await db.mark_reminder_sent(user_id, interval)
+                    except Exception:
+                        pass
+        except Exception as e:
+            logger.error(f"Reminder worker error: {e}")
+        await asyncio.sleep(REMINDER_CHECK_PERIOD)
+
+
 async def on_startup(bot: Bot) -> None:
     if not WEBHOOK_URL:
         raise ValueError("WEBHOOK_URL is not set")
@@ -110,6 +138,7 @@ async def on_startup(bot: Bot) -> None:
         logger.error(f"Initial indexing failed: {e}")
 
     asyncio.create_task(daily_sofa_indexing(bot))
+    asyncio.create_task(reminder_worker(bot))
 
 
 async def on_shutdown(bot: Bot) -> None:
