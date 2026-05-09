@@ -185,15 +185,34 @@ async def sofa_stats_handler(message: Message) -> None:
     await message.answer(f"В базе данных {count} диванов Rivalli")
 
 
-async def send_to_group(bot: Bot, client_info: str, interest: str | None) -> None:
+async def send_to_group(
+    bot: Bot,
+    client_info: str,
+    interest: str | None,
+    user_id: int,
+) -> None:
     if not TELEGRAM_GROUP_ID:
         logger.warning("TELEGRAM_GROUP_ID not set")
         return
 
+    user_facts = await db.get_user_facts(user_id)
+    client_name = user_facts.get("name", "")
+
     text = "📢 <b>Новая заявка!</b>\n\n"
-    text += f"Клиент: {client_info}\n"
+    if client_name:
+        text += f"Имя: {client_name}\n"
+    text += f"Контакт: {client_info}\n"
     if interest:
-        text += f"Интерес: {interest}"
+        text += f"Интерес: {interest}\n"
+
+    history = await db.get_user_messages(user_id, limit=10)
+    if history:
+        text += "\n<b>Диалог:</b>\n"
+        for msg in history[-10:]:
+            if msg.user_message and not msg.user_message.startswith("["):
+                text += f"👤 {msg.user_message[:80]}\n"
+            if msg.bot_response and not msg.bot_response.startswith("["):
+                text += f"🤖 {msg.bot_response[:80]}\n"
 
     try:
         await bot.send_message(TELEGRAM_GROUP_ID, text)
@@ -356,7 +375,7 @@ async def contact_handler(message: Message, bot: Bot) -> None:
         client_info += f", Имя: {full_name}"
     client_info += f", TG: {tg_link}"
 
-    await send_to_group(bot, client_info, user_interest)
+    await send_to_group(bot, client_info, user_interest, user_id)
 
     await db.save_message(
         user_id=user_id,
@@ -651,7 +670,7 @@ async def ai_handler(message: Message, bot: Bot) -> None:
         user_interest = await db.get_user_interest(user_id)
         client_info = f"Телефон: {phone}, TG: {tg_link}"
 
-        await send_to_group(bot, client_info, user_interest)
+        await send_to_group(bot, client_info, user_interest, user_id)
     interest_keywords = ["диван", "кровать", "матрас", "кресло", "кушетка", "мебель"]
     detected_interest = None
     for kw in interest_keywords:
