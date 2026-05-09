@@ -5,7 +5,7 @@ import os
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 
-from sqlalchemy import Column, BigInteger, Integer, String, DateTime, Text, LargeBinary, create_engine
+from sqlalchemy import Column, BigInteger, Integer, String, DateTime, Text, LargeBinary, create_engine, text
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 from sqlalchemy.orm import DeclarativeBase
 
@@ -76,6 +76,7 @@ class ConversationModel(Base):
     last_reminder_at = Column(DateTime, nullable=True)
     topic = Column(Text, nullable=True)
     last_bot_message = Column(Text, nullable=True)
+    last_interest = Column(Text, nullable=True)
     created_at = Column(DateTime, default=datetime.now)
 
 
@@ -155,6 +156,11 @@ class Database:
     async def init_db(self) -> None:
         async with self._engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
+            await conn.execute(text("ALTER TABLE messages ALTER COLUMN user_id TYPE BIGINT"))
+            await conn.execute(text("ALTER TABLE user_facts ALTER COLUMN user_id TYPE BIGINT"))
+            await conn.execute(text("ALTER TABLE user_images ALTER COLUMN user_id TYPE BIGINT"))
+            await conn.execute(text("ALTER TABLE conversations ALTER COLUMN user_id TYPE BIGINT"))
+            await conn.execute(text("ALTER TABLE conversations ADD COLUMN IF NOT EXISTS last_interest TEXT"))
 
     async def save_message(
         self,
@@ -482,7 +488,7 @@ class Database:
             result = await session.execute(stmt)
             return result.scalar() or 0
 
-    async def touch_conversation(self, user_id: int, topic: str | None = None, last_bot_message: str | None = None) -> None:
+    async def touch_conversation(self, user_id: int, topic: str | None = None, last_bot_message: str | None = None, last_interest: str | None = None) -> None:
         async with self._session_factory() as session:
             from sqlalchemy import select
 
@@ -499,11 +505,14 @@ class Database:
                     conv.topic = topic
                 if last_bot_message:
                     conv.last_bot_message = last_bot_message
+                if last_interest:
+                    conv.last_interest = last_interest
             else:
                 conv = ConversationModel(
                     user_id=user_id,
                     topic=topic,
                     last_bot_message=last_bot_message,
+                    last_interest=last_interest,
                 )
                 session.add(conv)
             await session.commit()
@@ -569,6 +578,15 @@ class Database:
                     conv.reminder_sent_1d = 1
                 conv.last_reminder_at = datetime.now()
                 await session.commit()
+
+    async def get_user_interest(self, user_id: int) -> str | None:
+        async with self._session_factory() as session:
+            from sqlalchemy import select
+
+            stmt = select(ConversationModel).where(ConversationModel.user_id == user_id)
+            result = await session.execute(stmt)
+            conv = result.scalar_one_or_none()
+            return conv.last_interest if conv else None
 
 
 db = Database()

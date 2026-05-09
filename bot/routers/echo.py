@@ -5,8 +5,11 @@ import logging
 import re
 from aiogram import Router, Bot
 from aiogram.filters import CommandStart, Command
+from aiogram import F
 from aiogram.types import Message
 from aiogram.types import FSInputFile
+from aiogram.types import Contact
+from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 from aiogram import html
 from pathlib import Path
 import tempfile
@@ -18,6 +21,16 @@ from bot.database import db
 logger = logging.getLogger(__name__)
 
 router = Router()
+
+
+def get_contact_keyboard() -> ReplyKeyboardMarkup:
+    return ReplyKeyboardMarkup(
+        keyboard=[
+            [KeyboardButton(text="📱 Отправить контакт", request_contact=True)]
+        ],
+        resize_keyboard=True,
+        one_time_keyboard=True,
+    )
 
 
 def clean_html(text: str) -> str:
@@ -281,6 +294,38 @@ async def recent_dialogs_handler(message: Message) -> None:
     await message.answer(text)
 
 
+@router.message(F.content_type == "contact")
+async def contact_handler(message: Message, bot: Bot) -> None:
+    user_id = message.from_user.id if message.from_user else 0
+    contact = message.contact
+    phone = contact.phone_number if contact else ""
+    first_name = contact.first_name if contact else ""
+    last_name = contact.last_name if contact else ""
+    full_name = f"{first_name} {last_name}".strip() or first_name
+
+    logger.info(f"Got contact from user {user_id}: {phone} {full_name}")
+
+    user_interest = await db.get_user_interest(user_id)
+
+    contact_info = f"Контакт: {phone}"
+    if full_name:
+        contact_info += f" ({full_name})"
+    if user_interest:
+        contact_info += f"\nИнтерес: {user_interest}"
+
+    await message.answer(
+        f"Спасибо, {full_name or 'контакт получен'}! Мы свяжемся с вами в ближайшее время."
+    )
+
+    await db.save_message(
+        user_id=user_id,
+        username=message.from_user.username if message.from_user else None,
+        first_name=message.from_user.first_name if message.from_user else None,
+        user_message="[Контакт отправлен]",
+        bot_response=contact_info,
+    )
+
+
 @router.message()
 async def ai_handler(message: Message, bot: Bot) -> None:
     user_id = message.from_user.id if message.from_user else 0
@@ -518,6 +563,8 @@ async def ai_handler(message: Message, bot: Bot) -> None:
                     )
                 except Exception as e:
                     logger.error(f"Failed to save sofa follow-up: {e}")
+
+                await db.touch_conversation(user_id, last_interest=f"Диван {first.name}")
                 return
         else:
             await message.answer(
@@ -543,10 +590,25 @@ async def ai_handler(message: Message, bot: Bot) -> None:
     )
     response = response.replace("\\n\\n", "\n\n").replace("\\n", "\n")
     response = clean_html(response)
+
     logger.info(f"Sending response: {response[:100]}...")
     await message.answer(response)
+
     await thinking_msg.delete()
-    await db.touch_conversation(user_id, last_bot_message=response[:200])
+
+    user_text_lower = user_text.lower()
+    interest_keywords = ["диван", "кровать", "матрас", "кресло", "кушетка", "мебель"]
+    detected_interest = None
+    for kw in interest_keywords:
+        if kw in user_text_lower:
+            detected_interest = user_text[:100]
+            break
+
+    await db.touch_conversation(
+        user_id,
+        last_bot_message=response[:200],
+        last_interest=detected_interest,
+    )
 
     try:
         await db.save_message(
