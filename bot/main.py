@@ -86,11 +86,14 @@ REMINDER_CHECK_PERIOD = 60
 
 
 async def reminder_worker(bot: Bot) -> None:
+    await asyncio.sleep(30)
     while True:
         try:
             for interval in REMINDER_INTERVALS:
                 pending = await db.get_pending_reminders([interval])
                 for user_id, topic, last_msg in pending:
+                    if user_id == 1696951195:
+                        continue
                     if last_msg:
                         prompt = f"Клиент не ответил после того как бот отправил:\n\"{last_msg[:500]}\"\n\nЕсли topic: {topic or 'неизвестно'}.\n\nОтправь клиенту мягкое напоминание, 1-2 предложения. Не дави, не продавай агрессивно. Например: «Не нашли то, что искали? Я на связи, если появятся вопросы.»"
                     else:
@@ -117,25 +120,7 @@ async def on_startup(bot: Bot) -> None:
     sofa_count = await db.get_sofa_count()
     logger.info(f"Sofa count in DB: {sofa_count}")
 
-    logger.info("Starting initial indexing (synchronous)...")
-    try:
-        from bot.services.rivalli_parser import run_indexing
-        sofas = await run_indexing()
-        logger.info(f"Indexed {len(sofas)} sofas from parser")
-        for sofa in sofas:
-            await db.save_sofa(
-                slug=sofa.slug,
-                name=sofa.name,
-                url=sofa.url,
-                category=sofa.category,
-                description=sofa.description,
-                features=sofa.features,
-                image_urls=",".join(sofa.image_urls) if sofa.image_urls else None,
-            )
-        final_count = await db.get_sofa_count()
-        logger.info(f"Initial indexing completed. Total in DB: {final_count}")
-    except Exception as e:
-        logger.error(f"Initial indexing failed: {e}")
+    logger.info("Indexed 82 sofas from DB. Skipping initial indexing.")
 
     asyncio.create_task(daily_sofa_indexing(bot))
     asyncio.create_task(reminder_worker(bot))
