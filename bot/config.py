@@ -16,6 +16,7 @@ WEBHOOK_PATH = os.getenv("WEBHOOK_PATH", "/webhook")
 WEBHOOK_SECRET = os.getenv("WEBHOOK_SECRET", "secret_token")
 HOST = os.getenv("HOST", "0.0.0.0")
 PORT = int(os.getenv("PORT", "8080"))
+TELEGRAM_GROUP_ID = os.getenv("TELEGRAM_GROUP_ID")
 
 if not BOT_TOKEN:
     print(f"DEBUG: BOT_TOKEN env var = '{BOT_TOKEN}'", file=sys.stderr)

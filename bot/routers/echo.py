@@ -3,16 +3,16 @@ from __future__ import annotations
 import base64
 import logging
 import re
-from aiogram import Router, Bot
+from aiogram import Router, Bot, F
 from aiogram.filters import CommandStart, Command
-from aiogram import F
 from aiogram.types import Message
 from aiogram.types import FSInputFile
-from aiogram.types import Contact
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 from aiogram import html
 from pathlib import Path
 import tempfile
+
+from bot.config import TELEGRAM_GROUP_ID
 
 from bot.services.ai_service import get_ai_service
 from bot.services.rivalli_search import rivalli_search
@@ -185,6 +185,37 @@ async def sofa_stats_handler(message: Message) -> None:
     await message.answer(f"В базе данных {count} диванов Rivalli")
 
 
+async def send_to_group(bot: Bot, client_info: str, interest: str | None) -> None:
+    if not TELEGRAM_GROUP_ID:
+        logger.warning("TELEGRAM_GROUP_ID not set")
+        return
+
+    text = "📢 <b>Новая заявка!</b>\n\n"
+    text += f"Клиент: {client_info}\n"
+    if interest:
+        text += f"Интерес: {interest}"
+
+    try:
+        await bot.send_message(TELEGRAM_GROUP_ID, text)
+        logger.info(f"Sent lead to group: {client_info[:50]}")
+    except Exception as e:
+        logger.error(f"Failed to send to group: {e}")
+
+
+@router.message(Command("myid"))
+async def myid_handler(message: Message, bot: Bot) -> None:
+    chat = message.chat
+    chat_type = chat.type if chat else "unknown"
+    chat_id = chat.id if chat else "unknown"
+    chat_title = chat.title if chat and hasattr(chat, "title") else ""
+
+    await message.answer(
+        f"Chat ID: {chat_id}\nType: {chat_type}\nTitle: {chat_title}"
+    )
+
+    logger.info(f"Chat info: id={chat_id}, type={chat_type}, title={chat_title}")
+
+
 @router.message(Command("мои_фото"))
 async def my_photos_handler(message: Message, bot: Bot) -> None:
     user_id = message.from_user.id if message.from_user else 0
@@ -316,6 +347,16 @@ async def contact_handler(message: Message, bot: Bot) -> None:
     await message.answer(
         f"Спасибо, {full_name or 'контакт получен'}! Мы свяжемся с вами в ближайшее время."
     )
+
+    username_tg = message.from_user.username if message.from_user else None
+    tg_link = f"@{username_tg}" if username_tg else "нет TG username"
+
+    client_info = f"Телефон: {phone}"
+    if full_name:
+        client_info += f", Имя: {full_name}"
+    client_info += f", TG: {tg_link}"
+
+    await send_to_group(bot, client_info, user_interest)
 
     await db.save_message(
         user_id=user_id,
@@ -597,6 +638,20 @@ async def ai_handler(message: Message, bot: Bot) -> None:
     await thinking_msg.delete()
 
     user_text_lower = user_text.lower()
+
+    phone_pattern = re.compile(r'\+?7[\s\-]?\(?\d{3}\)?[\s\-]?\d{3}[\s\-]?\d{2}[\s\-]?\d{2}')
+    phone_match = phone_pattern.search(user_text)
+    has_phone_keyword = any(word in user_text_lower for word in ["номер", "телефон", "звоните", "позвонить", "+7", "8-9", "8 9"])
+
+    if phone_match and has_phone_keyword:
+        phone = phone_match.group()
+        username_tg = message.from_user.username if message.from_user else None
+        tg_link = f"@{username_tg}" if username_tg else "нет TG username"
+
+        user_interest = await db.get_user_interest(user_id)
+        client_info = f"Телефон: {phone}, TG: {tg_link}"
+
+        await send_to_group(bot, client_info, user_interest)
     interest_keywords = ["диван", "кровать", "матрас", "кресло", "кушетка", "мебель"]
     detected_interest = None
     for kw in interest_keywords:
