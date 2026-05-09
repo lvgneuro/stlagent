@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import sys
-from datetime import timedelta, timezone
+from datetime import datetime, timedelta, timezone
 
 from aiohttp import web
 from aiogram import Bot, Dispatcher
@@ -17,6 +17,7 @@ from bot.config import (
     WEBHOOK_PATH,
     HOST,
     PORT,
+    TELEGRAM_GROUP_ID,
 )
 from bot.routers import echo
 from bot.database import db
@@ -111,6 +112,58 @@ async def reminder_worker(bot: Bot) -> None:
         await asyncio.sleep(REMINDER_CHECK_PERIOD)
 
 
+LEAD_UPDATE_CHECK_PERIOD = 60
+
+
+async def lead_update_worker(bot: Bot) -> None:
+    await asyncio.sleep(60)
+    while True:
+        try:
+            from datetime import timedelta
+
+            from sqlalchemy import select, and_
+
+            async with db._session_factory() as session:
+                from bot.database import ConversationModel
+
+                one_minute_ago = datetime.now() - timedelta(minutes=1)
+                stmt = select(ConversationModel).where(
+                    and_(
+                        ConversationModel.lead_sent_at.isnot(None),
+                        ConversationModel.lead_sent_at < one_minute_ago,
+                    )
+                )
+                result = await session.execute(stmt)
+                convs = result.scalars().all()
+
+                for conv in convs:
+                    if conv.user_id == 1696951195:
+                        continue
+
+                    new_messages = await db.get_messages_after_lead(
+                        conv.user_id, conv.lead_sent_at
+                    )
+                    if new_messages and TELEGRAM_GROUP_ID:
+                        text = "🔄 <b>Обновление по заявке</b>\n\n"
+                        for msg in new_messages:
+                            if msg.user_message and not msg.user_message.startswith("["):
+                                text += f"👤 {msg.user_message[:80]}\n"
+                            if msg.bot_response and not msg.bot_response.startswith("["):
+                                text += f"🤖 {msg.bot_response[:80]}\n"
+
+                        try:
+                            await bot.send_message(TELEGRAM_GROUP_ID, text)
+                            conv.lead_sent_at = None
+                            await session.commit()
+                            logger.info(f"Sent lead update for user {conv.user_id}")
+                        except Exception as e:
+                            logger.error(f"Failed to send lead update: {e}")
+
+        except Exception as e:
+            logger.error(f"Lead update worker error: {e}")
+        await asyncio.sleep(LEAD_UPDATE_CHECK_PERIOD)
+
+
 async def on_startup(bot: Bot) -> None:
     if not WEBHOOK_URL:
         raise ValueError("WEBHOOK_URL is not set")
@@ -124,6 +177,7 @@ async def on_startup(bot: Bot) -> None:
 
     asyncio.create_task(daily_sofa_indexing(bot))
     asyncio.create_task(reminder_worker(bot))
+    asyncio.create_task(lead_update_worker(bot))
 
 
 async def on_shutdown(bot: Bot) -> None:

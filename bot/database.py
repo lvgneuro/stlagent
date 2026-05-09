@@ -77,6 +77,7 @@ class ConversationModel(Base):
     topic = Column(Text, nullable=True)
     last_bot_message = Column(Text, nullable=True)
     last_interest = Column(Text, nullable=True)
+    lead_sent_at = Column(DateTime, nullable=True)
     created_at = Column(DateTime, default=datetime.now)
 
 
@@ -161,6 +162,7 @@ class Database:
             await conn.execute(text("ALTER TABLE user_images ALTER COLUMN user_id TYPE BIGINT"))
             await conn.execute(text("ALTER TABLE conversations ALTER COLUMN user_id TYPE BIGINT"))
             await conn.execute(text("ALTER TABLE conversations ADD COLUMN IF NOT EXISTS last_interest TEXT"))
+            await conn.execute(text("ALTER TABLE conversations ADD COLUMN IF NOT EXISTS lead_sent_at TIMESTAMP"))
 
     async def save_message(
         self,
@@ -587,6 +589,43 @@ class Database:
             result = await session.execute(stmt)
             conv = result.scalar_one_or_none()
             return conv.last_interest if conv else None
+
+    async def mark_lead_sent(self, user_id: int) -> None:
+        async with self._session_factory() as session:
+            from sqlalchemy import select
+
+            stmt = select(ConversationModel).where(ConversationModel.user_id == user_id)
+            result = await session.execute(stmt)
+            conv = result.scalar_one_or_none()
+            if conv:
+                conv.lead_sent_at = datetime.now()
+                await session.commit()
+
+    async def get_messages_after_lead(self, user_id: int, after_time: datetime) -> list[Message]:
+        async with self._session_factory() as session:
+            from sqlalchemy import select
+
+            stmt = (
+                select(MessageModel)
+                .where(
+                    MessageModel.user_id == user_id,
+                    MessageModel.created_at > after_time,
+                )
+                .order_by(MessageModel.created_at)
+            )
+            result = await session.execute(stmt)
+            rows = result.scalars().all()
+            return [
+                Message(
+                    user_id=int(row.user_id),
+                    username=str(row.username) if row.username else None,
+                    first_name=str(row.first_name) if row.first_name else None,
+                    user_message=str(row.user_message),
+                    bot_response=str(row.bot_response),
+                    created_at=row.created_at if row.created_at else datetime.now(),
+                )
+                for row in rows
+            ]
 
 
 db = Database()
