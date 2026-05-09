@@ -5,7 +5,7 @@ import os
 from dataclasses import dataclass
 from datetime import datetime
 
-from sqlalchemy import Column, BigInteger, Integer, String, DateTime, Text, LargeBinary
+from sqlalchemy import Column, BigInteger, Integer, String, DateTime, Text, LargeBinary, create_engine
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 from sqlalchemy.orm import DeclarativeBase
 
@@ -117,6 +117,14 @@ class Database:
             )
 
         self._session_factory = async_sessionmaker(self._engine, expire_on_commit=False)
+
+    def get_sync_engine(self):
+        database_url = os.getenv("DATABASE_URL", "")
+        if database_url.startswith("postgresql+asyncpg://"):
+            database_url = database_url.replace("postgresql+asyncpg://", "postgresql://", 1)
+        elif database_url.startswith("postgres+asyncpg://"):
+            database_url = database_url.replace("postgres+asyncpg://", "postgresql://", 1)
+        return create_engine(database_url, echo=False)
 
     async def init_db(self) -> None:
         async with self._engine.begin() as conn:
@@ -375,7 +383,7 @@ class Database:
     async def search_sofas(self, query: str, limit: int = 10) -> list[Sofa]:
         logger.info(f"search_sofas called with query: '{query}'")
         async with self._session_factory() as session:
-            from sqlalchemy import select, text
+            from sqlalchemy import select
 
             query_clean = query.lower().strip()
             logger.info(f"Searching for: {query_clean}")

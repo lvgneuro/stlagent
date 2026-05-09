@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import sys
+from datetime import timedelta, timezone
 
 from aiohttp import web
 from aiogram import Bot, Dispatcher
@@ -27,42 +28,56 @@ logger = logging.getLogger(__name__)
 dp = Dispatcher()
 dp.include_router(echo.router)
 
+MOSCOW_TZ = timezone(timedelta(hours=3))
+
+
+
+
+
+async def _run_indexing(bot: Bot) -> None:
+    try:
+        from bot.services.rivalli_parser import run_indexing
+
+        logger.info("Starting daily sofa indexing...")
+        sofas = await run_indexing()
+
+        for sofa in sofas:
+            await db.save_sofa(
+                slug=sofa.slug,
+                name=sofa.name,
+                url=sofa.url,
+                category=sofa.category,
+                description=sofa.description,
+                features=sofa.features,
+                image_urls=",".join(sofa.image_urls) if sofa.image_urls else None,
+            )
+
+        count = await db.get_sofa_count()
+        logger.info(f"Daily indexing completed. Total sofas: {count}")
+
+        admin_id = 1696951195
+        try:
+            await bot.send_message(
+                admin_id,
+                f"✅ Ежедневная индексация диванов завершена. Всего в базе: {count}",
+            )
+        except Exception:
+            pass
+
+    except Exception as e:
+        logger.error(f"Daily indexing error: {e}")
+
 
 async def daily_sofa_indexing(bot: Bot) -> None:
     while True:
-        try:
-            from bot.services.rivalli_parser import run_indexing
-
-            logger.info("Starting daily sofa indexing...")
-            sofas = await run_indexing()
-
-            for sofa in sofas:
-                await db.save_sofa(
-                    slug=sofa.slug,
-                    name=sofa.name,
-                    url=sofa.url,
-                    category=sofa.category,
-                    description=sofa.description,
-                    features=sofa.features,
-                    image_urls=",".join(sofa.image_urls) if sofa.image_urls else None,
-                )
-
-            count = await db.get_sofa_count()
-            logger.info(f"Daily indexing completed. Total sofas: {count}")
-
-            admin_id = 1696951195
-            try:
-                await bot.send_message(
-                    admin_id,
-                    f"✅ Ежедневная индексация диванов завершена. Всего в базе: {count}",
-                )
-            except Exception:
-                pass
-
-        except Exception as e:
-            logger.error(f"Daily indexing error: {e}")
-
-        await asyncio.sleep(86400)
+        now_wall = __import__("datetime").datetime.now(MOSCOW_TZ)
+        target = now_wall.replace(hour=9, minute=0, second=0, microsecond=0)
+        if now_wall.hour >= 9:
+            target += timedelta(days=1)
+        seconds_until = (target - now_wall).total_seconds()
+        logger.info(f"Next indexing in {seconds_until/3600:.1f} hours at {target}")
+        await asyncio.sleep(seconds_until)
+        await _run_indexing(bot)
 
 
 async def on_startup(bot: Bot) -> None:

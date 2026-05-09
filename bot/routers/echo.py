@@ -139,6 +139,28 @@ async def index_sofas_handler(message: Message) -> None:
         await message.answer(f"Ошибка индексации: {type(e).__name__}")
 
 
+@router.message(Command("db_fix", prefix="/"))
+async def db_fix_handler(message: Message) -> None:
+    if message.from_user and message.from_user.id != 1696951195:
+        await message.answer("У вас нет доступа к этой команде")
+        return
+
+    await message.answer("Исправляю схему БД...")
+    try:
+        from sqlalchemy import text
+        engine = db.get_sync_engine()
+        with engine.connect() as conn:
+            conn.execute(text("ALTER TABLE messages ALTER COLUMN user_message TYPE TEXT"))
+            conn.execute(text("ALTER TABLE messages ALTER COLUMN bot_response TYPE TEXT"))
+            conn.execute(text("ALTER TABLE user_facts ALTER COLUMN fact_value TYPE TEXT"))
+            conn.execute(text("ALTER TABLE user_facts ALTER COLUMN context TYPE TEXT"))
+            conn.execute(text("ALTER TABLE user_images ALTER COLUMN description TYPE TEXT"))
+            conn.commit()
+        await message.answer("✅ Схема БД обновлена. VARCHAR → TEXT")
+    except Exception as e:
+        await message.answer(f"❌ Ошибка: {type(e).__name__}: {e}")
+
+
 @router.message(Command("статистика_диваны", prefix="/"))
 async def sofa_stats_handler(message: Message) -> None:
     if message.from_user and message.from_user.id != 1696951195:
@@ -454,6 +476,25 @@ async def ai_handler(message: Message, bot: Bot) -> None:
                         found_sofas[:5], user_text[:30]
                     )
                 await message.answer(response_text)
+                history = await db.get_user_messages(user_id, limit=20)
+                conversation_history = []
+                for msg in reversed(history):
+                    if msg.user_message and msg.user_message.strip():
+                        conversation_history.append({"role": "user", "content": msg.user_message})
+                    if msg.bot_response and msg.bot_response.strip():
+                        conversation_history.append(
+                            {"role": "assistant", "content": msg.bot_response}
+                        )
+                thinking = await message.answer("Думаю...")
+                follow_up = await get_ai_service().get_response(
+                    f"Пользователь смотрит диван {first.name}. Расскажи коротко про цену, наличие в салонах Тюмени и почему именно эту модель стоит выбрать. Отвечай коротко, 1-2 абзаца.",
+                    conversation_history,
+                    user_id,
+                )
+                follow_up = follow_up.replace("\\n\\n", "\n\n").replace("\\n", "\n")
+                follow_up = clean_html(follow_up)
+                await message.answer(follow_up)
+                await thinking.delete()
                 try:
                     await db.save_message(
                         user_id=user_id,
@@ -464,6 +505,16 @@ async def ai_handler(message: Message, bot: Bot) -> None:
                     )
                 except Exception as e:
                     logger.error(f"Failed to save sofa message: {e}")
+                try:
+                    await db.save_message(
+                        user_id=user_id,
+                        username=username,
+                        first_name=first_name,
+                        user_message=f"[Показан диван {first.name}]",
+                        bot_response=follow_up[:5000],
+                    )
+                except Exception as e:
+                    logger.error(f"Failed to save sofa follow-up: {e}")
                 return
         else:
             await message.answer(
