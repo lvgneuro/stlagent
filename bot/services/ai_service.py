@@ -463,6 +463,61 @@ https://homelike18.ru/
 
 --- КОНЕЦ HOMELIKE18 ---
 
+--- ДИВАНЫ Frendom (Екатеринбург) ---
+
+Мебельная фабрика из Екатеринбурга. Производит мягкую мебель с 2012 года. Телефон: 8 (800) 505-37-20. Сайт: https://frendom.ru
+
+Каркас из берёзовой фанеры. Механизмы: АприКлик, Дельфин, Выкатной, Еврокнижка, Пантограф. Наполнение: ППУ, пружина-змейка, НПБ. Скидка на все модели — 40%.
+
+--- ПРЯМЫЕ ДИВАНЫ ---
+
+ВИТО (модульный): https://frendom.ru/vse-tovary/vito_divan_modular — диван модульный, механизм Дельфин / Выкатной. Габариты 3400×1820 мм, спальное место 2240×1300 мм.
+ВИТО НЬЮ (прямой): https://frendom.ru/vse-tovary/divan_vito_new — механизм Выкатной. Габариты 1770×1080×1050 мм, спальное место 1880×1360 мм.
+ВИТО НЬЮ (угловой): https://frendom.ru/vse-tovary/%D0%BCvito-new-ugol — механизм Дельфин. Габариты 2650×1940×1040 мм, спальное место 2240×1430 мм.
+ВИТО НЬЮ (модульный): https://frendom.ru/vse-tovary/vito_new_modules — механизм выкатной. Габариты 4020×1950×1040 мм, спальное место 1870×1340 мм.
+ВИТО (малый): https://frendom.ru/divany/vito-small — механизм Выкатной. Габариты 1350×1070×1040 мм, спальное место 1880×960 мм.
+ГАРДА (прямой): https://frendom.ru/vse-tovary/garda_divan — механизм еврокнижка. Габариты 2260×1030×950 мм, спальное место 1930×1540 мм.
+ГАРДА (угловой): https://frendom.ru/vse-tovary/garda_ugol — механизм еврокнижка. Габариты 2870×1620×950 мм, спальное место 2530×1350 мм.
+ИНКО БЭЙС: https://frendom.ru/vse-tovary/divan_inko_base — механизм Еврокнижка. Габариты 2020×1120×940 мм, спальное место 2020×1510 мм.
+КЛИФФ (прямой): https://frendom.ru/vse-tovary/kliff_divan — механизм еврокнижка. Габариты 2610×1310×940 мм, спальное место 2000×1700 мм.
+КЛИФФ (угловой): https://frendom.ru/vse-tovary/kliff_uglovoi — механизм еврокнижка. Габариты 3590×1840×970 мм, спальное место 3000×1560 мм.
+ЛЕЙТОН: https://frendom.ru/vse-tovary/divan_layton — механизм Еврокнижка. Габариты 2470×1250×950 мм, спальное место 1990×1690 мм.
+НОРМАН: https://frendom.ru/vse-tovary/divan_norman — механизм еврокнижка. Габариты 2260×1030×950 мм, спальное место 1930×1550 мм.
+АЙЗОН: https://frendom.ru/vse-tovary/izon_divan — механизм АприКлик. Габариты 2400×1120×810 мм, спальное место 2000×1540 мм.
+МАКАО: https://frendom.ru/vse-tovary/divan_macao — механизм АприКлик. Габариты 2240×1100×960 мм, спальное место 1950×1500 мм.
+СЭММИ: https://frendom.ru/vse-tovary/divan-sammy — механизм АприКлик нью. Габариты 2115×1030×960 мм, спальное место 1960×1500 мм.
+КУБО (модульный): https://frendom.ru/divany/divan_cubo — механизм Еврокнижка. Габариты 2430×1530 мм, спальное место 1530×1970 мм.
+ЛОККИ: https://frendom.ru/vse-tovary/divan_lokki — Габариты 1200×630×790 мм. Без механизма.
+ШЭГГИ: https://frendom.ru/divany/divan-shaggy — механизм Еврокнижка. Габариты 2100×1020×900 мм, спальное место 1920×1530 мм.
+ФЛЭТ: https://frendom.ru/vse-tovary/flat_divan — Габариты 2100×980×920 мм, спальное место 1940×1600 мм.
+ГЕРД: https://frendom.ru/vse-tovary/gerd-divan-pryamoj — Габариты 1000×620×825 мм. Мини-диван.
+
+--- КРЕСЛА ---
+ВИТО НЬЮ (кресло): https://frendom.ru/vse-tovary/vito-new-kreslo — Габариты 1010×1070×1040 мм.
+ВИТО НЬЮ (кресло-кровать): https://frendom.ru/vse-tovary/vito-new-kreslo-krovati — механизм Выкатной. Габариты 1140×1070×1040 мм, спальное место 1880×620 мм.
+СОННИ (кресло-кровать): https://frendom.ru/kresla-i-pufy/kreslo-krovat-sonny — механизм Выкатной. Габариты 1100×1080×1060 мм, спальное место 1870×620 мм.
+АСПЕН (кресло): https://frendom.ru/kresla-i-pufy/kreslo-aspen — Габариты 800×915×705 мм.
+АЙЗОН (кресло): https://frendom.ru/vse-tovary/izon_kreslo — Габариты 1035×950×810 мм.
+ГЕРД (кресло): https://frendom.ru/vse-tovary/gerd_kreslo — Габариты 500×620×825 мм.
+ЮККИ (кресло): https://frendom.ru/vse-tovary/ukki_kreslo — Габариты 720×730×830 мм.
+ОТТО (кресло): https://frendom.ru/kresla-i-pufy/kreslo-otto — Габариты 890×890×800 мм.
+ФАСО (кресло): https://frendom.ru/kresla-i-pufy/kreslo-faso — Габариты 1070×980×850 мм.
+УРСУЛА (кресло): https://frendom.ru/kresla-i-pufy/kreslo-ursula — Габариты 560×600×800 мм.
+ЭЛЬСКАР (кресло-кровать): https://frendom.ru/vse-tovary/elskar-kreslo — механизм АприКлик. Габариты 1130×960×830 мм, спальное место 1930×800 мм.
+
+--- ПУФЫ ---
+АСПЕН (пуф прямоугольный А7О): https://frendom.ru/kresla-i-pufy/pufy/aspen_puf_pryamougol%27nyj_a7o — Габариты 810×355×420 мм.
+АСПЕН (пуф квадратный A72O): https://frendom.ru/kresla-i-pufy/pufy/aspen_puf_kvadratnyj_a72o — Габариты 400×400×420 мм.
+АСПЕН (пуф круглый A71O): https://frendom.ru/kresla-i-pufy/pufy/aspen_puf_kruglyj_a71o — Габариты 440×440×420 мм.
+АЙЗОН (пуф): https://frendom.ru/vse-tovary/izon_puf — Габариты 430×430×410 мм.
+ГЕРД (пуф прямоугольный): https://frendom.ru/vse-tovary/gerd_puf_pryamougol — Габариты 800×340×450 мм.
+ФИЛ (пуф квадратный): https://frendom.ru/kresla-i-pufy/poof-phil-kvadratnyj — Габариты 440×440×410 мм.
+ФИЛ (пуф круглый): https://frendom.ru/kresla-i-pufy/poof-phil-kruglyj — Габариты 420×420×410 мм.
+ОТТО (пуф): https://frendom.ru/kresla-i-pufy/poof-otto — Габариты 670×670×470 мм.
+ЭЛЬКЕ ОПТИМА (пуф А7О): https://frendom.ru/kresla-i-pufy/poof-elke — Габариты 670×670×460 мм.
+
+--- КОНЕЦ FRENDOM ---
+
 --- МАТРАСЫ LineaFlex (Тюмень) ---
 
 Матрасы всегда подбираются под размер кровати. Стандартные размеры: 80×190, 90×190, 120×190, 140×190, 160×200, 180×200, 200×200.
