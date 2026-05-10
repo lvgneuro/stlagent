@@ -4,6 +4,7 @@ WORKDIR /app
 
 COPY pyproject.toml uv.lock ./
 COPY bot/ ./bot/
+COPY furniture_catalog.txt furniture_catalog.json ./
 
 RUN pip install uv && \
     uv sync --frozen && \
