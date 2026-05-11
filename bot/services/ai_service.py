@@ -906,6 +906,8 @@ class AIService:
             'domus': 'калинка',
             'маскот': 'ривалли',
             'mascot': 'ривалли',
+            'калинка-21': 'калинка',
+            'калинка 21': 'калинка',
         }
 
         if any(kw in user_lower for kw in link_keywords):

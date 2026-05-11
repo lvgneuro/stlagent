@@ -85,6 +85,9 @@ async def parse_oprime() -> dict[str, str]:
                 "к72": "https://mebel-kalinka.ru/katalog/item/kalinka_72/",
                 "к25": "https://mebel-kalinka.ru/katalog/item/kalinka_25/",
                 "к26": "https://mebel-kalinka.ru/katalog/item/kalinka_26/",
+                "к21": "https://mebel-kalinka.ru/katalog/item/kalinka_21_1/",
+                "калинка 21": "https://mebel-kalinka.ru/katalog/item/kalinka_21_1/",
+                "калинка-21": "https://mebel-kalinka.ru/katalog/item/kalinka_21_1/",
                 "домус": "https://mebel-kalinka.ru/katalog/item/domus/",
                 "domus": "https://mebel-kalinka.ru/katalog/item/domus/",
             }
