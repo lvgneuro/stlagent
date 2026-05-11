@@ -879,6 +879,17 @@ class AIService:
 
         # Direct link handling - bypass AI for known link requests
         user_lower = user_message.lower()
+        
+        # IMMEDIATE RETURN for KALINKA models - no conditions
+        if "калинка" in user_lower and any(w in user_lower for w in ["ссылк", "сайт", "каталог", "покажи", "есть"]):
+            if "21" in user_lower or "к21" in user_lower:
+                return "Ссылка на модель: https://mebel-kalinka.ru/katalog/item/kalinka_21_1/"
+            if "25" in user_lower or "к25" in user_lower:
+                return "Ссылка на модель: https://mebel-kalinka.ru/katalog/item/kalinka_25/"
+            if "26" in user_lower or "к26" in user_lower:
+                return "Ссылка на модель: https://mebel-kalinka.ru/katalog/item/kalinka_26/"
+            return "Ссылка на сайт КАЛИНКА: https://mebel-kalinka.ru/"
+        
         link_keywords = ["ссылку", "ссылка", "сайт", "каталог", "покажи"]
         factory_links = {
             "калинка": "https://mebel-kalinka.ru/",
