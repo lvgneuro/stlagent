@@ -887,8 +887,8 @@ class AIService:
             "ривалли": "https://rivalli.ru/catalog/divany/",
             "rivalli": "https://rivalli.ru/catalog/divany/",
         }
-        # Model to factory mapping
-model_to_factory = {
+# Model to factory mapping
+        model_to_factory = {
             'каро': 'опрайм',
             'симпл': 'опрайм',
             'тейлор': 'опрайм',
@@ -906,6 +906,7 @@ model_to_factory = {
             'маскот': 'ривалли',
             'mascot': 'ривалли',
         }
+
         if any(kw in user_lower for kw in link_keywords):
             # Check direct factory name
             for factory, link in factory_links.items():
