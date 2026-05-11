@@ -110,7 +110,7 @@ async def command_start_handler(message: Message) -> None:
     user_id = message.from_user.id if message.from_user else 0
     logger.info(f"Получен /start от {user_id}")
     name = message.from_user.full_name if message.from_user else " stranger"
-    await message.answer(f"Hello, {html.bold(name)}! How can I help you today?")
+    await message.answer("Интеллектуальный помощник по подбору мягкой мебели готов немедленно прийти к Вам на помощь!")
 
 
 @router.message(Command("обновить_каталог", prefix="/"))
