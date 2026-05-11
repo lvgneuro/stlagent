@@ -784,7 +784,7 @@ class AIService:
             ]
             user_lower = user_message.lower()
             # Check for model numbers: К72, К25, Аруба, Венеция, Каро, Симпл, Тэйлор etc.
-            has_model = bool(re.search(r'к\d+|аруба|венеция|амиго| grand|лима|париж|сити|каро|симпл|тейлор|сноф', user_lower, re.IGNORECASE))
+            has_model = bool(re.search(r'к\d+|аруба|венеция|амиго| grand|лима|париж|сити|каро|симпл|тейлор|сноф|оскар|осkar', user_lower, re.IGNORECASE))
             has_furniture_keyword = any(word in user_lower for word in furniture_tyumen_patterns)
             # Also check if client mentions link request
             link_request = any(word in user_lower for word in ['ссылку', 'ссылка', 'сайт', 'каталог', 'покажи'])
@@ -862,6 +862,7 @@ class AIService:
             'тейлор': 'опрайм',
             'сноф': 'опрайм',
             'мэттью': 'опрайм',
+            'флай': 'опрайм',
             'к72': 'калинка',
             'к25': 'калинка',
             'к26': 'калинка',
@@ -871,6 +872,7 @@ class AIService:
             'к31': 'калинка',
             'grand': 'калинка',
             'lario': 'калинка',
+            'оскар': 'калинка',
         }
         if any(kw in user_lower for kw in link_keywords):
             # Check direct factory name
