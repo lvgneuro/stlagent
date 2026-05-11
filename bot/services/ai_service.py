@@ -13,6 +13,21 @@ from bot.services.image_service import image_service
 
 logger = logging.getLogger(__name__)
 
+model_url_cache: dict[str, str] = {}
+
+
+async def load_catalog_urls() -> None:
+    """Load model URLs from catalog parsers."""
+    global model_url_cache
+    try:
+        logger.info("Starting catalog URL loading...")
+        from bot.services.catalog_parser import update_catalog_urls
+
+        model_url_cache = await update_catalog_urls()
+        logger.info(f"Loaded {len(model_url_cache)} model URLs from catalogs")
+    except Exception as e:
+        logger.warning(f"Failed to load catalog URLs: {e}")
+
 WEB_SEARCH_TOOL = {
     "name": "web_search",
     "description": "Search the web for current information. Use this when you need up-to-date facts or recent events.",
@@ -860,7 +875,11 @@ class AIService:
             for factory, link in factory_links.items():
                 if factory in user_lower:
                     return f"Ссылка на сайт {factory.upper()}: {link}"
-            # Check model names
+            # Check model names from parsed catalog
+            for model_name, url in model_url_cache.items():
+                if model_name in user_lower:
+                    return f"Ссылка на модель: {url}"
+            # Fallback to factory links for known models
             for model, factory in model_to_factory.items():
                 if model in user_lower:
                     link = factory_links.get(factory)

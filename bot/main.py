@@ -196,6 +196,9 @@ async def main() -> None:
     await db.init_db()
     logger.info("Database initialized")
 
+    from bot.services.ai_service import load_catalog_urls
+    await load_catalog_urls()
+
     bot = Bot(token=BOT_TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
 
     await on_startup(bot)

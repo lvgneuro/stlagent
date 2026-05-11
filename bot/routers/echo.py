@@ -115,6 +115,22 @@ async def command_start_handler(message: Message) -> None:
     await message.answer(f"Hello, {html.bold(name)}! How can I help you today?")
 
 
+@router.message(Command("обновить_каталог", prefix="/"))
+async def update_catalog_handler(message: Message) -> None:
+    if message.from_user and message.from_user.id != 1696951195:
+        await message.answer("У вас нет доступа к этой команде")
+        return
+
+    await message.answer("Обновляю каталог моделей с сайтов КАЛИНКА и ОПРАЙМ...")
+
+    from bot.services.ai_service import load_catalog_urls
+
+    await load_catalog_urls()
+    from bot.services.ai_service import model_url_cache
+
+    await message.answer(f"Каталог обновлён! Загружено {len(model_url_cache)} моделей.")
+
+
 @router.message(Command("индексация_диваны", prefix="/"))
 async def index_sofas_handler(message: Message) -> None:
     if message.from_user and message.from_user.id != 1696951195:
