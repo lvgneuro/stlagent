@@ -43,14 +43,44 @@ async def parse_oprime() -> dict[str, str]:
             soup = BeautifulSoup(resp.text, "html.parser")
             for link in soup.find_all("a", href=True):
                 href = link["href"]
-                if "/catalog/divany/" in href and href != "/catalog/divany":
-                    name = link.get_text(strip=True).lower()
-                    if name and not name.startswith("/"):
-                        models[name] = f"https://oprime.ru{href}"
-                        if "-" in name:
-                            simple = name.split("-")[0].strip()
-                            models[simple] = f"https://oprime.ru{href}"
+                # Match specific model pages (not categories)
+                if re.match(r"/catalog/divany/[a-z]+(-\w+)*$", href):
+                    # Extract model name from URL path
+                    model_name = href.split("/")[-1].lower()
+                    full_url = f"https://oprime.ru{href}"
+
+                    # Add various name variants
+                    models[model_name] = full_url
+                    # Also add uppercase for exact matching
+                    models[model_name.upper()] = full_url
+
+                    # Add simple name (first part before hyphen)
+                    if "-" in model_name:
+                        simple = model_name.split("-")[0]
+                        models[simple] = full_url
+
+                    # Check if link has visible name that matches a known model
+                    text = link.get_text(strip=True).lower()
+                    if text and text not in ["на ножках", "раскладные", "п-образные", "модульные", "угловые", "прямые", "со спальным местом", "с бельевым коробом", "все фильтры", "сортировать", "показать еще"]:
+                        models[text] = full_url
+
             logger.info(f"Parsed OPRIME: {len(models)} models found")
+
+            # Add known models as fallback (in case parsing misses them)
+            known_models = {
+                "каро": "https://oprime.ru/catalog/divany/caro-a22l-t3s-a22p",
+                "каро ": "https://oprime.ru/catalog/divany/caro-a22l-t3s-a22p",
+                "симпл": "https://oprime.ru/catalog/divany/simple-i",
+                "тейлор": "https://oprime.ru/catalog/divany/taylor-t3o",
+                "сноф": "https://oprime.ru/catalog/divany/snof-a2o",
+                "мэттью": "https://oprime.ru/catalog/divany/matthew-divan",
+                "флекс": "https://oprime.ru/catalog/divany/flex-m4l-v3s-m4p",
+            }
+            for name, url in known_models.items():
+                if name not in models:
+                    models[name] = url
+            logger.info(f"Added {len(known_models)} known OPRIME models")
+
         except Exception as e:
             logger.warning(f"Failed to parse OPRIME: {e}")
     return models
