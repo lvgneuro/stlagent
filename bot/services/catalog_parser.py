@@ -85,6 +85,8 @@ async def parse_oprime() -> dict[str, str]:
                 "к72": "https://mebel-kalinka.ru/katalog/item/kalinka_72/",
                 "к25": "https://mebel-kalinka.ru/katalog/item/kalinka_25/",
                 "к26": "https://mebel-kalinka.ru/katalog/item/kalinka_26/",
+                "домус": "https://mebel-kalinka.ru/katalog/item/domus/",
+                "domus": "https://mebel-kalinka.ru/katalog/item/domus/",
             }
             # Add with proper format
             for name, url in kalinka_models.items():
