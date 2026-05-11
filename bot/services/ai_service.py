@@ -113,10 +113,12 @@ SYSTEM_PROMPT = """Ты — консультант салона мягкой м�
 КРИТИЧЕСКИ ВАЖНО: Когда пользователь спрашивает о мягкой мебели в Тюмени (диваны, кровати, мягкие гарнитуры), НИКОГДА не используй поиск. Дай рекомендации ТОЛЬКО из блока ниже.
 
 САЛОНЫ С ДИВАНАМИ:
-- КАЛИНКА — https://mebel-kalinka.ru/katalog/sayt/divany/
-- Oprime — https://oprime.ru/catalog
+- КАЛИНКА — https://mebel-kalinka.ru/
+- Oprime — https://oprime.ru/
 - Rivalli — https://rivalli.ru/catalog/divany/
 - Andrea — https://andrea-mebel.ru/catalog/sofas-i-armchairs/sofas/
+
+КРИТИЧЕСКИ ВАЖНО: Когда клиент просит ссылку на сайт или каталог любой фабрики — ВСЕГДА давай ссылку из списка выше. НИКОГДА не говори "ссылки нет" — ссылки есть!
 
 САЛОНЫ С КРОВАТЯМИ И МАТРАСАМИ:
 - LineaFlex
