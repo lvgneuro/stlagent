@@ -865,8 +865,10 @@ class AIService:
             'флай': 'опрайм',
             'к25': 'калинка',
             'к26': 'калинка',
+            'к72': 'калинка',
             'grand': 'калинка',
             'lario': 'калинка',
+            'оскар': 'калинка',
         }
         if any(kw in user_lower for kw in link_keywords):
             # Check direct factory name
@@ -877,12 +879,10 @@ class AIService:
             for model_name, url in model_url_cache.items():
                 if model_name in user_lower:
                     return f"Ссылка на модель: {url}"
-            # Fallback to factory links for known models
+            # Fallback for known models not in catalog
             for model, factory in model_to_factory.items():
                 if model in user_lower:
-                    link = factory_links.get(factory)
-                    if link:
-                        return f"Ссылка на сайт {factory.upper()}: {link}"
+                    return f"Модель {model.upper()} есть в каталоге фабрики {factory.upper()}, но на сайте не представлена. Посмотреть можно в салонах: ТК «ОРИОН» или ТЦ «Новый Магнат» в Тюмени."
 
         messages.append({"role": "user", "content": user_message})
 
