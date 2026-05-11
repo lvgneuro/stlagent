@@ -26,7 +26,9 @@ async def load_catalog_urls() -> None:
         model_url_cache = await update_catalog_urls()
         logger.info(f"Loaded {len(model_url_cache)} model URLs from catalogs")
     except Exception as e:
+        import traceback
         logger.warning(f"Failed to load catalog URLs: {e}")
+        logger.warning(f"Traceback: {traceback.format_exc()}")
 
 WEB_SEARCH_TOOL = {
     "name": "web_search",
