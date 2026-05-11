@@ -935,6 +935,9 @@ class AIService:
             for name, url in known_kalinka.items():
                 if name in user_lower:
                     return f"Ссылка на модель: {url}"
+            # Last resort - give factory link for калинка
+            if "калинка" in user_lower:
+                return f"Ссылка на сайт КАЛИНКА: https://mebel-kalinka.ru/"
 
         messages.append({"role": "user", "content": user_message})
 
