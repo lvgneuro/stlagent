@@ -926,10 +926,15 @@ class AIService:
                     for cached_model, url in model_url_cache.items():
                         if model in cached_model:
                             return f"Ссылка на модель: {url}"
-                    # Otherwise give factory link
-                    link = factory_links.get(factory)
-                    if link:
-                        return f"Ссылка на сайт {factory.upper()}: {link}"
+            # Direct fallback for known KALINKA models
+            known_kalinka = {
+                'калинка-21': 'https://mebel-kalinka.ru/katalog/item/kalinka_21_1/',
+                'калинка 21': 'https://mebel-kalinka.ru/katalog/item/kalinka_21_1/',
+                'к21': 'https://mebel-kalinka.ru/katalog/item/kalinka_21_1/',
+            }
+            for name, url in known_kalinka.items():
+                if name in user_lower:
+                    return f"Ссылка на модель: {url}"
 
         messages.append({"role": "user", "content": user_message})
 
