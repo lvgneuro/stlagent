@@ -693,7 +693,7 @@ async def ai_handler(message: Message, bot: Bot) -> None:
     user_text_lower = user_text.lower()
 
     phone_pattern = re.compile(
-        r"\+?7[\s\-]?\(?\d{3}\)?[\s\-]?\d{3}[\s\-]?\d{2}[\s\-]?\d{2}"
+        r"(\+?7|8)[\s\-]?\(?\d{3}\)?[\s\-]?\d{3}[\s\-]?\d{2}[\s\-]?\d{2}"
     )
     phone_match = phone_pattern.search(user_text)
     has_phone_keyword = any(
