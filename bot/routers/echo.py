@@ -698,7 +698,7 @@ async def ai_handler(message: Message, bot: Bot) -> None:
     phone_match = phone_pattern.search(user_text)
     has_phone_keyword = any(
         word in user_text_lower
-        for word in ["номер", "телефон", "звоните", "позвонить", "+7", "8-9", "8 9"]
+        for word in ["номер", "телефон", "звоните", "позвонить", "позвонит", "свяжитесь", "+7", "8-9", "8 9"]
     )
 
     if phone_match and has_phone_keyword:
