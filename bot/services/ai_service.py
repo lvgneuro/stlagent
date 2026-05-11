@@ -835,15 +835,37 @@ class AIService:
         link_keywords = ['ссылку', 'ссылка', 'сайт', 'каталог', 'покажи']
         factory_links = {
             'калинка': 'https://mebel-kalinka.ru/',
-            'калиinka': 'https://mebel-kalinka.ru/',
             'опрайм': 'https://oprime.ru/',
-            'оприме': 'https://oprime.ru/',
             'oprime': 'https://oprime.ru/',
         }
+        # Model to factory mapping
+        model_to_factory = {
+            'каро': 'опрайм',
+            'симпл': 'опрайм',
+            'тейлор': 'опрайм',
+            'сноф': 'опрайм',
+            'мэттью': 'опрайм',
+            'к72': 'калинка',
+            'к25': 'калинка',
+            'к26': 'калинка',
+            'к28': 'калинка',
+            'к29': 'калинка',
+            'к30': 'калинка',
+            'к31': 'калинка',
+            'grand': 'калинка',
+            'lario': 'калинка',
+        }
         if any(kw in user_lower for kw in link_keywords):
+            # Check direct factory name
             for factory, link in factory_links.items():
                 if factory in user_lower:
                     return f"Ссылка на сайт {factory.upper()}: {link}"
+            # Check model names
+            for model, factory in model_to_factory.items():
+                if model in user_lower:
+                    link = factory_links.get(factory)
+                    if link:
+                        return f"Ссылка на сайт {factory.upper()}: {link}"
 
         messages.append({"role": "user", "content": user_message})
 
