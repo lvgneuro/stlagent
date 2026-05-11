@@ -884,6 +884,8 @@ class AIService:
             "калинка": "https://mebel-kalinka.ru/",
             "опрайм": "https://oprime.ru/",
             "oprime": "https://oprime.ru/",
+            "ривалли": "https://rivalli.ru/catalog/divany/",
+            "rivalli": "https://rivalli.ru/catalog/divany/",
         }
         # Model to factory mapping
 model_to_factory = {
@@ -901,6 +903,8 @@ model_to_factory = {
             'оскар': 'калинка',
             'домус': 'калинка',
             'domus': 'калинка',
+            'маскот': 'ривалли',
+            'mascot': 'ривалли',
         }
         if any(kw in user_lower for kw in link_keywords):
             # Check direct factory name
