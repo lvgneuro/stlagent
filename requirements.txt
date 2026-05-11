@@ -8,3 +8,4 @@ aiosqlite>=0.22.1
 aiohttp>=3.9
 asyncpg>=0.30
 psycopg2-binary>=2.9
+beautifulsoup4>=4.12
