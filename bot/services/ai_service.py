@@ -879,10 +879,17 @@ class AIService:
             for model_name, url in model_url_cache.items():
                 if model_name in user_lower:
                     return f"Ссылка на модель: {url}"
-            # Fallback for known models not in catalog
+            # Check model_url_cache for fallback
             for model, factory in model_to_factory.items():
                 if model in user_lower:
-                    return f"Модель {model.upper()} есть в каталоге фабрики {factory.upper()}, но на сайте не представлена. Посмотреть можно в салонах: ТК «ОРИОН» или ТЦ «Новый Магнат» в Тюмени."
+                    # Check if we have direct URL in cache
+                    for cached_model, url in model_url_cache.items():
+                        if model in cached_model:
+                            return f"Ссылка на модель: {url}"
+                    # Otherwise give factory link
+                    link = factory_links.get(factory)
+                    if link:
+                        return f"Ссылка на сайт {factory.upper()}: {link}"
 
         messages.append({"role": "user", "content": user_message})
 

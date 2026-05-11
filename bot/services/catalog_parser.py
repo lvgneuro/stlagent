@@ -81,8 +81,8 @@ async def parse_oprime() -> dict[str, str]:
             }
             # KALINKA known models - verified URLs
             kalinka_models = {
-                "оскар": "https://mebel-kalinka.ru/katalog/item/kalinka_6/",
-                "к6": "https://mebel-kalinka.ru/katalog/item/kalinka_6/",
+                "оскар": "https://mebel-kalinka.ru/katalog/item/oskar/",
+                "к72": "https://mebel-kalinka.ru/katalog/item/kalinka_72/",
                 "к25": "https://mebel-kalinka.ru/katalog/item/kalinka_25/",
                 "к26": "https://mebel-kalinka.ru/katalog/item/kalinka_26/",
             }
