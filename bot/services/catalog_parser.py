@@ -79,16 +79,19 @@ async def parse_oprime() -> dict[str, str]:
                 "fly": "https://oprime.ru/catalog/divany/fly-t310",
                 "taylor": "https://oprime.ru/catalog/divany/taylor-a4l-t3s-a4p",
             }
-            # KALINKA known models
+            # KALINKA known models - verified URLs
             kalinka_models = {
                 "оскар": "https://mebel-kalinka.ru/katalog/item/kalinka_6/",
-                "калинка 6": "https://mebel-kalinka.ru/katalog/item/kalinka_6/",
                 "к6": "https://mebel-kalinka.ru/katalog/item/kalinka_6/",
                 "к25": "https://mebel-kalinka.ru/katalog/item/kalinka_25/",
                 "к26": "https://mebel-kalinka.ru/katalog/item/kalinka_26/",
-                "к72": "https://mebel-kalinka.ru/katalog/item/k72/",  # may not exist
             }
-            models.update(kalinka_models)
+            # Add with proper format
+            for name, url in kalinka_models.items():
+                models[name] = url
+                if name.startswith("к") and len(name) == 2:
+                    models[f"калинка {name}"] = url
+                    models[f"калинка_{name}"] = url
             for name, url in known_models.items():
                 if name not in models:
                     models[name] = url
