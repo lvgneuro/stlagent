@@ -69,12 +69,15 @@ async def parse_oprime() -> dict[str, str]:
             # Add known models as fallback (in case parsing misses them)
             known_models = {
                 "каро": "https://oprime.ru/catalog/divany/caro-a22l-t3s-a22p",
-                "каро ": "https://oprime.ru/catalog/divany/caro-a22l-t3s-a22p",
                 "симпл": "https://oprime.ru/catalog/divany/simple-i",
-                "тейлор": "https://oprime.ru/catalog/divany/taylor-t3o",
+                "тейлор": "https://oprime.ru/catalog/divany/taylor-a4l-t3s-a4p",
+                "тноф": "https://oprime.ru/catalog/divany/snof-a2o",
                 "сноф": "https://oprime.ru/catalog/divany/snof-a2o",
                 "мэттью": "https://oprime.ru/catalog/divany/matthew-divan",
                 "флекс": "https://oprime.ru/catalog/divany/flex-m4l-v3s-m4p",
+                "флай": "https://oprime.ru/catalog/divany/fly-t310",
+                "fly": "https://oprime.ru/catalog/divany/fly-t310",
+                "taylor": "https://oprime.ru/catalog/divany/taylor-a4l-t3s-a4p",
             }
             for name, url in known_models.items():
                 if name not in models:
