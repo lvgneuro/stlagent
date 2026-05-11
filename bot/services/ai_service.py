@@ -769,13 +769,16 @@ class AIService:
                 "бюджет",
             ]
             user_lower = user_message.lower()
-            # Check for model numbers like К72, К25, Аруба, Венеция etc.
-            has_model = bool(re.search(r'к\d+|аруба|венеция|амиго| grand|лима|париж|сити', user_lower, re.IGNORECASE))
+            # Check for model numbers: К72, К25, Аруба, Венеция, Каро, Симпл, Тэйлор etc.
+            has_model = bool(re.search(r'к\d+|аруба|венеция|амиго| grand|лима|париж|сити|каро|симпл|тейлор|сноф', user_lower, re.IGNORECASE))
             has_furniture_keyword = any(word in user_lower for word in furniture_tyumen_patterns)
-            # If model mentioned - skip furniture keyword requirement
-            is_tyumen_furniture = has_model or (
-                ("тюмень" in user_lower or "тюмени" in user_lower) and has_furniture_keyword
-            )
+            # Also check if client mentions link request
+            link_request = any(word in user_lower for word in ['ссылку', 'ссылка', 'сайт', 'каталог', 'покажи'])
+            # If model mentioned or link requested for known factories - trigger furniture context
+            is_tyumen_furniture = has_model or (link_request and (
+                'калинка' in user_lower or 'опрайм' in user_lower or 'оприме' in user_lower or
+                'ривалли' in user_lower or 'андреа' in user_lower
+            )) or (("тюмень" in user_lower or "тюмени" in user_lower) and has_furniture_keyword)
             logger.info(
                 f"Furniture check: is_tyumen_furniture={is_tyumen_furniture}, msg={user_message[:40]}"
             )
