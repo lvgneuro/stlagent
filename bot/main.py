@@ -130,6 +130,7 @@ async def lead_update_worker(bot: Bot) -> None:
                 stmt = select(ConversationModel).where(
                     and_(
                         ConversationModel.lead_sent_at.isnot(None),
+                        ConversationModel.last_lead_update_at.is_(None),
                         ConversationModel.lead_sent_at < one_minute_ago,
                     )
                 )
@@ -153,7 +154,7 @@ async def lead_update_worker(bot: Bot) -> None:
 
                         try:
                             await bot.send_message(TELEGRAM_GROUP_ID, text)
-                            conv.lead_sent_at = None
+                            conv.last_lead_update_at = conv.lead_sent_at
                             await session.commit()
                             logger.info(f"Sent lead update for user {conv.user_id}")
                         except Exception as e:

@@ -672,7 +672,7 @@ async def ai_handler(message: Message, bot: Bot) -> None:
         client_info = f"Телефон: {phone}, TG: {tg_link}"
 
         await send_to_group(bot, client_info, user_interest, user_id)
-    await db.mark_lead_sent(user_id)
+        await db.mark_lead_sent(user_id)
 
     interest_keywords = ["диван", "кровать", "матрас", "кресло", "кушетка", "мебель"]
     detected_interest = None

@@ -78,6 +78,7 @@ class ConversationModel(Base):
     last_bot_message = Column(Text, nullable=True)
     last_interest = Column(Text, nullable=True)
     lead_sent_at = Column(DateTime, nullable=True)
+    last_lead_update_at = Column(DateTime, nullable=True)
     created_at = Column(DateTime, default=datetime.now)
 
 
@@ -163,6 +164,7 @@ class Database:
             await conn.execute(text("ALTER TABLE conversations ALTER COLUMN user_id TYPE BIGINT"))
             await conn.execute(text("ALTER TABLE conversations ADD COLUMN IF NOT EXISTS last_interest TEXT"))
             await conn.execute(text("ALTER TABLE conversations ADD COLUMN IF NOT EXISTS lead_sent_at TIMESTAMP"))
+            await conn.execute(text("ALTER TABLE conversations ADD COLUMN IF NOT EXISTS last_lead_update_at TIMESTAMP"))
 
     async def save_message(
         self,
