@@ -25,9 +25,7 @@ router = Router()
 
 def get_contact_keyboard() -> ReplyKeyboardMarkup:
     return ReplyKeyboardMarkup(
-        keyboard=[
-            [KeyboardButton(text="📱 Отправить контакт", request_contact=True)]
-        ],
+        keyboard=[[KeyboardButton(text="📱 Отправить контакт", request_contact=True)]],
         resize_keyboard=True,
         one_time_keyboard=True,
     )
@@ -110,7 +108,7 @@ def is_sofa_request(text: str) -> bool:
 @router.message(CommandStart())
 async def command_start_handler(message: Message) -> None:
     user_id = message.from_user.id if message.from_user else 0
-    logger.info(f"Got /start from {user_id}")
+    logger.info(f"Получен /start от {user_id}")
     name = message.from_user.full_name if message.from_user else " stranger"
     await message.answer(f"Hello, {html.bold(name)}! How can I help you today?")
 
@@ -164,7 +162,7 @@ async def index_sofas_handler(message: Message) -> None:
         count = await db.get_sofa_count()
         await message.answer(f"✅ Индексация завершена! Всего в базе: {count} диванов")
     except Exception as e:
-        logger.error(f"Indexing error: {e}")
+        logger.error(f"Ошибка индексации: {e}")
         await message.answer(f"Ошибка индексации: {type(e).__name__}")
 
 
@@ -177,14 +175,27 @@ async def db_fix_handler(message: Message) -> None:
     await message.answer("Исправляю схему БД...")
     try:
         from sqlalchemy import text
+
         engine = db.get_sync_engine()
         with engine.connect() as conn:
-            conn.execute(text("ALTER TABLE messages ALTER COLUMN user_message TYPE TEXT"))
-            conn.execute(text("ALTER TABLE messages ALTER COLUMN bot_response TYPE TEXT"))
-            conn.execute(text("ALTER TABLE user_facts ALTER COLUMN fact_value TYPE TEXT"))
+            conn.execute(
+                text("ALTER TABLE messages ALTER COLUMN user_message TYPE TEXT")
+            )
+            conn.execute(
+                text("ALTER TABLE messages ALTER COLUMN bot_response TYPE TEXT")
+            )
+            conn.execute(
+                text("ALTER TABLE user_facts ALTER COLUMN fact_value TYPE TEXT")
+            )
             conn.execute(text("ALTER TABLE user_facts ALTER COLUMN context TYPE TEXT"))
-            conn.execute(text("ALTER TABLE user_images ALTER COLUMN description TYPE TEXT"))
-            conn.execute(text("CREATE TABLE IF NOT EXISTS conversations (id SERIAL PRIMARY KEY, user_id BIGINT NOT NULL, last_message_at TIMESTAMP DEFAULT NOW(), reminder_sent_15min INTEGER DEFAULT 0, reminder_sent_3h INTEGER DEFAULT 0, reminder_sent_1d INTEGER DEFAULT 0, last_reminder_at TIMESTAMP, topic TEXT, last_bot_message TEXT, created_at TIMESTAMP DEFAULT NOW())"))
+            conn.execute(
+                text("ALTER TABLE user_images ALTER COLUMN description TYPE TEXT")
+            )
+            conn.execute(
+                text(
+                    "CREATE TABLE IF NOT EXISTS conversations (id SERIAL PRIMARY KEY, user_id BIGINT NOT NULL, last_message_at TIMESTAMP DEFAULT NOW(), reminder_sent_15min INTEGER DEFAULT 0, reminder_sent_3h INTEGER DEFAULT 0, reminder_sent_1d INTEGER DEFAULT 0, last_reminder_at TIMESTAMP, topic TEXT, last_bot_message TEXT, created_at TIMESTAMP DEFAULT NOW())"
+                )
+            )
             conn.commit()
         await message.answer("✅ Схема БД обновлена. VARCHAR → TEXT")
     except Exception as e:
@@ -208,7 +219,7 @@ async def send_to_group(
     user_id: int,
 ) -> None:
     if not TELEGRAM_GROUP_ID:
-        logger.warning("TELEGRAM_GROUP_ID not set")
+        logger.warning("TELEGRAM_GROUP_ID не задан")
         return
 
     user_facts = await db.get_user_facts(user_id)
@@ -232,9 +243,9 @@ async def send_to_group(
 
     try:
         await bot.send_message(TELEGRAM_GROUP_ID, text)
-        logger.info(f"Sent lead to group: {client_info[:50]}")
+        logger.info(f"Отправлена заявка в группу: {client_info[:50]}")
     except Exception as e:
-        logger.error(f"Failed to send to group: {e}")
+        logger.error(f"Не удалось отправить в группу: {e}")
 
 
 @router.message(Command("myid"))
@@ -244,17 +255,17 @@ async def myid_handler(message: Message, bot: Bot) -> None:
     chat_id = chat.id if chat else "unknown"
     chat_title = chat.title if chat and hasattr(chat, "title") else ""
 
-    await message.answer(
-        f"Chat ID: {chat_id}\nType: {chat_type}\nTitle: {chat_title}"
-    )
+    await message.answer(f"Chat ID: {chat_id}\nType: {chat_type}\nTitle: {chat_title}")
 
-    logger.info(f"Chat info: id={chat_id}, type={chat_type}, title={chat_title}")
+    logger.info(
+        f"Информация о чате: id={chat_id}, тип={chat_type}, название={chat_title}"
+    )
 
 
 @router.message(Command("мои_фото"))
 async def my_photos_handler(message: Message, bot: Bot) -> None:
     user_id = message.from_user.id if message.from_user else 0
-    logger.info(f"User {user_id} requested their photos")
+    logger.info(f"Пользователь {user_id} запросил свои фото")
 
     images = await db.get_user_images(user_id, limit=20)
 
@@ -282,7 +293,7 @@ async def my_photos_handler(message: Message, bot: Bot) -> None:
                 await bot.send_photo(user_id, photo)
             Path(tmp_path).unlink(missing_ok=True)
         except Exception as e:
-            logger.error(f"Error sending image {img.id}: {e}")
+            logger.error(f"Ошибка отправки изображения {img.id}: {e}")
 
     await message.answer(
         "Чтобы посмотреть конкретное изображение, напиши: /фото 1 (где 1 - номер изображения)"
@@ -369,7 +380,7 @@ async def contact_handler(message: Message, bot: Bot) -> None:
     last_name = contact.last_name if contact else ""
     full_name = f"{first_name} {last_name}".strip() or first_name
 
-    logger.info(f"Got contact from user {user_id}: {phone} {full_name}")
+    logger.info(f"Получен контакт от пользователя {user_id}: {phone} {full_name}")
 
     user_interest = await db.get_user_interest(user_id)
 
@@ -412,7 +423,9 @@ async def ai_handler(message: Message, bot: Bot) -> None:
     has_photo = message.photo is not None and len(message.photo) > 0
 
     if has_photo:
-        logger.info(f"Got photo from user {user_id}, caption: {message.caption!r}")
+        logger.info(
+            f"Получено фото от пользователя {user_id}, подпись: {message.caption!r}"
+        )
 
         try:
             photo = message.photo[-1]
@@ -460,7 +473,7 @@ async def ai_handler(message: Message, bot: Bot) -> None:
                 response = response.replace("\\n\\n", "\n\n").replace("\\n", "\n")
                 response = clean_html(response)
 
-                logger.info(f"Image analysis: {response[:100]}...")
+                logger.info(f"Анализ изображения: {response[:100]}...")
                 await message.answer(response)
                 await analyzing_msg.delete()
                 await db.touch_conversation(user_id, last_bot_message=response[:200])
@@ -475,11 +488,11 @@ async def ai_handler(message: Message, bot: Bot) -> None:
                 )
             return
         except Exception as e:
-            logger.error(f"Image handling error: {e}")
+            logger.error(f"Ошибка обработки изображения: {e}")
             await message.answer(f"Ошибка обработки изображения: {type(e).__name__}")
             return
 
-    logger.info(f"Got message: {message.text[:50] if message.text else 'empty'}")
+    logger.info(f"Получено сообщение: {message.text[:50] if message.text else 'empty'}")
     user_text = message.text or ""
 
     if not user_text.strip():
@@ -507,7 +520,7 @@ async def ai_handler(message: Message, bot: Bot) -> None:
                     Path(tmp_path).unlink(missing_ok=True)
                     return
                 except Exception as e:
-                    logger.error(f"Error sending image {image_id}: {e}")
+                    logger.error(f"Ошибка отправки изображения {image_id}: {e}")
 
         images = await db.get_user_images(user_id, limit=5)
         if images:
@@ -524,7 +537,7 @@ async def ai_handler(message: Message, bot: Bot) -> None:
                     )
                     Path(tmp_path).unlink(missing_ok=True)
                 except Exception as e:
-                    logger.error(f"Error sending image {img.id}: {e}")
+                    logger.error(f"Ошибка отправки изображения {img.id}: {e}")
             return
         else:
             await message.answer(
@@ -533,9 +546,9 @@ async def ai_handler(message: Message, bot: Bot) -> None:
             return
 
     if is_sofa_request(user_text):
-        logger.info(f"Sofa request detected: {user_text[:50]}")
+        logger.info(f"Обнаружен запрос на диван: {user_text[:50]}")
         sofa_count = await db.get_sofa_count()
-        logger.info(f"Sofa count in DB: {sofa_count}")
+        logger.info(f"Количество диванов в БД: {sofa_count}")
 
         all_sofas = await db.get_all_sofas(limit=100)
 
@@ -588,7 +601,7 @@ async def ai_handler(message: Message, bot: Bot) -> None:
                     ):
                         found_sofas.append(sofa)
 
-                logger.info(f"Found {len(found_sofas)} sofas by keyword matching")
+                logger.info(f"Найдено {len(found_sofas)} диванов по ключевым словам")
 
             if found_sofas:
                 first = found_sofas[0]
@@ -605,7 +618,9 @@ async def ai_handler(message: Message, bot: Bot) -> None:
                 conversation_history = []
                 for msg in reversed(history):
                     if msg.user_message and msg.user_message.strip():
-                        conversation_history.append({"role": "user", "content": msg.user_message})
+                        conversation_history.append(
+                            {"role": "user", "content": msg.user_message}
+                        )
                     if msg.bot_response and msg.bot_response.strip():
                         conversation_history.append(
                             {"role": "assistant", "content": msg.bot_response}
@@ -629,7 +644,7 @@ async def ai_handler(message: Message, bot: Bot) -> None:
                         bot_response=response_text[:500],
                     )
                 except Exception as e:
-                    logger.error(f"Failed to save sofa message: {e}")
+                    logger.error(f"Не удалось сохранить сообщение о диване: {e}")
                 try:
                     await db.save_message(
                         user_id=user_id,
@@ -639,9 +654,11 @@ async def ai_handler(message: Message, bot: Bot) -> None:
                         bot_response=follow_up[:5000],
                     )
                 except Exception as e:
-                    logger.error(f"Failed to save sofa follow-up: {e}")
+                    logger.error(f"Не удалось сохранить follow-up по дивану: {e}")
 
-                await db.touch_conversation(user_id, last_interest=f"Диван {first.name}")
+                await db.touch_conversation(
+                    user_id, last_interest=f"Диван {first.name}"
+                )
                 return
         else:
             await message.answer(
@@ -661,23 +678,28 @@ async def ai_handler(message: Message, bot: Bot) -> None:
             )
 
     thinking_msg = await message.answer("Думаю...")
-    logger.info("Getting AI response...")
+    logger.info("Получение ответа от AI...")
     response = await get_ai_service().get_response(
         user_text, conversation_history, user_id
     )
     response = response.replace("\\n\\n", "\n\n").replace("\\n", "\n")
     response = clean_html(response)
 
-    logger.info(f"Sending response: {response[:100]}...")
+    logger.info(f"Отправка ответа: {response[:100]}...")
     await message.answer(response)
 
     await thinking_msg.delete()
 
     user_text_lower = user_text.lower()
 
-    phone_pattern = re.compile(r'\+?7[\s\-]?\(?\d{3}\)?[\s\-]?\d{3}[\s\-]?\d{2}[\s\-]?\d{2}')
+    phone_pattern = re.compile(
+        r"\+?7[\s\-]?\(?\d{3}\)?[\s\-]?\d{3}[\s\-]?\d{2}[\s\-]?\d{2}"
+    )
     phone_match = phone_pattern.search(user_text)
-    has_phone_keyword = any(word in user_text_lower for word in ["номер", "телефон", "звоните", "позвонить", "+7", "8-9", "8 9"])
+    has_phone_keyword = any(
+        word in user_text_lower
+        for word in ["номер", "телефон", "звоните", "позвонить", "+7", "8-9", "8 9"]
+    )
 
     if phone_match and has_phone_keyword:
         phone = phone_match.group()
@@ -712,4 +734,4 @@ async def ai_handler(message: Message, bot: Bot) -> None:
             bot_response=response[:5000],
         )
     except Exception as e:
-        logger.error(f"Failed to save message: {e}")
+        logger.error(f"Не удалось сохранить сообщение: {e}")

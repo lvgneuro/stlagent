@@ -33,14 +33,11 @@ dp.include_router(echo.router)
 MOSCOW_TZ = timezone(timedelta(hours=3))
 
 
-
-
-
 async def _run_indexing(bot: Bot) -> None:
     try:
         from bot.services.rivalli_parser import run_indexing
 
-        logger.info("Starting daily sofa indexing...")
+        logger.info("Запуск ежедневной индексации диванов...")
         sofas = await run_indexing()
 
         for sofa in sofas:
@@ -55,7 +52,7 @@ async def _run_indexing(bot: Bot) -> None:
             )
 
         count = await db.get_sofa_count()
-        logger.info(f"Daily indexing completed. Total sofas: {count}")
+        logger.info(f"Ежедневная индексация завершена. Всего диванов: {count}")
 
         admin_id = 1696951195
         try:
@@ -67,7 +64,7 @@ async def _run_indexing(bot: Bot) -> None:
             pass
 
     except Exception as e:
-        logger.error(f"Daily indexing error: {e}")
+        logger.error(f"Ошибка ежедневной индексации: {e}")
 
 
 async def daily_sofa_indexing(bot: Bot) -> None:
@@ -77,7 +74,9 @@ async def daily_sofa_indexing(bot: Bot) -> None:
         if now_wall.hour >= 9:
             target += timedelta(days=1)
         seconds_until = (target - now_wall).total_seconds()
-        logger.info(f"Next indexing in {seconds_until/3600:.1f} hours at {target}")
+        logger.info(
+            f"Следующая индексация через {seconds_until / 3600:.1f} часов в {target}"
+        )
         await asyncio.sleep(seconds_until)
         await _run_indexing(bot)
 
@@ -96,7 +95,7 @@ async def reminder_worker(bot: Bot) -> None:
                     if user_id == 1696951195:
                         continue
                     if last_msg:
-                        prompt = f"Клиент не ответил после того как бот отправил:\n\"{last_msg[:500]}\"\n\nЕсли topic: {topic or 'неизвестно'}.\n\nОтправь клиенту мягкое напоминание, 1-2 предложения. Не дави, не продавай агрессивно. Например: «Не нашли то, что искали? Я на связи, если появятся вопросы.»"
+                        prompt = f'Клиент не ответил после того как бот отправил:\n"{last_msg[:500]}"\n\nЕсли topic: {topic or "неизвестно"}.\n\nОтправь клиенту мягкое напоминание, 1-2 предложения. Не дави, не продавай агрессивно. Например: «Не нашли то, что искали? Я на связи, если появятся вопросы.»'
                     else:
                         prompt = "Отправь клиенту мягкое напоминание, 1-2 предложения. Не дави, не продавай агрессивно."
 
@@ -108,7 +107,7 @@ async def reminder_worker(bot: Bot) -> None:
                     except Exception:
                         pass
         except Exception as e:
-            logger.error(f"Reminder worker error: {e}")
+            logger.error(f"Ошибка воркера напоминаний: {e}")
         await asyncio.sleep(REMINDER_CHECK_PERIOD)
 
 
@@ -147,21 +146,29 @@ async def lead_update_worker(bot: Bot) -> None:
                     if new_messages and TELEGRAM_GROUP_ID:
                         text = "🔄 <b>Обновление по заявке</b>\n\n"
                         for msg in new_messages:
-                            if msg.user_message and not msg.user_message.startswith("["):
+                            if msg.user_message and not msg.user_message.startswith(
+                                "["
+                            ):
                                 text += f"👤 {msg.user_message[:80]}\n"
-                            if msg.bot_response and not msg.bot_response.startswith("["):
+                            if msg.bot_response and not msg.bot_response.startswith(
+                                "["
+                            ):
                                 text += f"🤖 {msg.bot_response[:80]}\n"
 
                         try:
                             await bot.send_message(TELEGRAM_GROUP_ID, text)
                             conv.last_lead_update_at = conv.lead_sent_at
                             await session.commit()
-                            logger.info(f"Sent lead update for user {conv.user_id}")
+                            logger.info(
+                                f"Отправлено обновление по заявке для пользователя {conv.user_id}"
+                            )
                         except Exception as e:
-                            logger.error(f"Failed to send lead update: {e}")
+                            logger.error(
+                                f"Не удалось отправить обновление по заявке: {e}"
+                            )
 
         except Exception as e:
-            logger.error(f"Lead update worker error: {e}")
+            logger.error(f"Ошибка воркера обновлений по заявкам: {e}")
         await asyncio.sleep(LEAD_UPDATE_CHECK_PERIOD)
 
 
@@ -169,12 +176,12 @@ async def on_startup(bot: Bot) -> None:
     if not WEBHOOK_URL:
         raise ValueError("WEBHOOK_URL is not set")
     await bot.set_webhook(WEBHOOK_URL)
-    logger.info(f"Webhook set to {WEBHOOK_URL}")
+    logger.info(f"Вебхук установлен на {WEBHOOK_URL}")
 
     sofa_count = await db.get_sofa_count()
-    logger.info(f"Sofa count in DB: {sofa_count}")
+    logger.info(f"Количество диванов в БД: {sofa_count}")
 
-    logger.info("Indexed 82 sofas from DB. Skipping initial indexing.")
+    logger.info("В БД проиндексировано 82 дивана. Пропуск начальной индексации.")
 
     asyncio.create_task(daily_sofa_indexing(bot))
     asyncio.create_task(reminder_worker(bot))
@@ -183,20 +190,21 @@ async def on_startup(bot: Bot) -> None:
 
 async def on_shutdown(bot: Bot) -> None:
     await bot.delete_webhook()
-    logger.info("Webhook deleted")
+    logger.info("Вебхук удалён")
 
 
 async def main() -> None:
-    logger.info("Starting bot in webhook mode...")
+    logger.info("Запуск бота в режиме вебхука...")
     if not BOT_TOKEN:
         raise ValueError("BOT_TOKEN is not set")
     if not WEBHOOK_URL:
         raise ValueError("WEBHOOK_URL is not set")
 
     await db.init_db()
-    logger.info("Database initialized")
+    logger.info("База данных инициализирована")
 
     from bot.services.ai_service import load_catalog_urls
+
     await load_catalog_urls()
 
     bot = Bot(token=BOT_TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
@@ -214,7 +222,7 @@ async def main() -> None:
     site = web.TCPSite(runner, HOST, PORT)
     await site.start()
 
-    logger.info(f"Webhook server started on http://{HOST}:{PORT}{WEBHOOK_PATH}")
+    logger.info(f"Вебхук-сервер запущен на http://{HOST}:{PORT}{WEBHOOK_PATH}")
 
     try:
         await asyncio.Event().wait()

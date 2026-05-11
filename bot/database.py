@@ -5,7 +5,17 @@ import os
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 
-from sqlalchemy import Column, BigInteger, Integer, String, DateTime, Text, LargeBinary, create_engine, text
+from sqlalchemy import (
+    Column,
+    BigInteger,
+    Integer,
+    String,
+    DateTime,
+    Text,
+    LargeBinary,
+    create_engine,
+    text,
+)
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 from sqlalchemy.orm import DeclarativeBase
 
@@ -150,21 +160,45 @@ class Database:
     def get_sync_engine(self):
         database_url = os.getenv("DATABASE_URL", "")
         if database_url.startswith("postgresql+asyncpg://"):
-            database_url = database_url.replace("postgresql+asyncpg://", "postgresql://", 1)
+            database_url = database_url.replace(
+                "postgresql+asyncpg://", "postgresql://", 1
+            )
         elif database_url.startswith("postgres+asyncpg://"):
-            database_url = database_url.replace("postgres+asyncpg://", "postgresql://", 1)
+            database_url = database_url.replace(
+                "postgres+asyncpg://", "postgresql://", 1
+            )
         return create_engine(database_url, echo=False)
 
     async def init_db(self) -> None:
         async with self._engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
-            await conn.execute(text("ALTER TABLE messages ALTER COLUMN user_id TYPE BIGINT"))
-            await conn.execute(text("ALTER TABLE user_facts ALTER COLUMN user_id TYPE BIGINT"))
-            await conn.execute(text("ALTER TABLE user_images ALTER COLUMN user_id TYPE BIGINT"))
-            await conn.execute(text("ALTER TABLE conversations ALTER COLUMN user_id TYPE BIGINT"))
-            await conn.execute(text("ALTER TABLE conversations ADD COLUMN IF NOT EXISTS last_interest TEXT"))
-            await conn.execute(text("ALTER TABLE conversations ADD COLUMN IF NOT EXISTS lead_sent_at TIMESTAMP"))
-            await conn.execute(text("ALTER TABLE conversations ADD COLUMN IF NOT EXISTS last_lead_update_at TIMESTAMP"))
+            await conn.execute(
+                text("ALTER TABLE messages ALTER COLUMN user_id TYPE BIGINT")
+            )
+            await conn.execute(
+                text("ALTER TABLE user_facts ALTER COLUMN user_id TYPE BIGINT")
+            )
+            await conn.execute(
+                text("ALTER TABLE user_images ALTER COLUMN user_id TYPE BIGINT")
+            )
+            await conn.execute(
+                text("ALTER TABLE conversations ALTER COLUMN user_id TYPE BIGINT")
+            )
+            await conn.execute(
+                text(
+                    "ALTER TABLE conversations ADD COLUMN IF NOT EXISTS last_interest TEXT"
+                )
+            )
+            await conn.execute(
+                text(
+                    "ALTER TABLE conversations ADD COLUMN IF NOT EXISTS lead_sent_at TIMESTAMP"
+                )
+            )
+            await conn.execute(
+                text(
+                    "ALTER TABLE conversations ADD COLUMN IF NOT EXISTS last_lead_update_at TIMESTAMP"
+                )
+            )
 
     async def save_message(
         self,
@@ -388,6 +422,7 @@ class Database:
     ) -> None:
         async with self._session_factory() as session:
             from sqlalchemy import select
+
             stmt = select(SofaModel).where(SofaModel.slug == slug)
             result = await session.execute(stmt)
             existing = result.scalar_one_or_none()
@@ -441,7 +476,9 @@ class Database:
             if not rows:
                 all_sofas = await session.execute(select(SofaModel).limit(5))
                 sample = all_sofas.scalars().all()
-                logger.info(f"Sample of DB: {[(s.name, s.slug, s.url[:30]) for s in sample]}")
+                logger.info(
+                    f"Sample of DB: {[(s.name, s.slug, s.url[:30]) for s in sample]}"
+                )
 
             return [
                 Sofa(
@@ -492,7 +529,13 @@ class Database:
             result = await session.execute(stmt)
             return result.scalar() or 0
 
-    async def touch_conversation(self, user_id: int, topic: str | None = None, last_bot_message: str | None = None, last_interest: str | None = None) -> None:
+    async def touch_conversation(
+        self,
+        user_id: int,
+        topic: str | None = None,
+        last_bot_message: str | None = None,
+        last_interest: str | None = None,
+    ) -> None:
         async with self._session_factory() as session:
             from sqlalchemy import select
 
@@ -521,7 +564,9 @@ class Database:
                 session.add(conv)
             await session.commit()
 
-    async def get_pending_reminders(self, intervals: list[str]) -> list[tuple[int, str, str | None]]:
+    async def get_pending_reminders(
+        self, intervals: list[str]
+    ) -> list[tuple[int, str, str | None]]:
         async with self._session_factory() as session:
             from sqlalchemy import select, and_
 
@@ -603,7 +648,9 @@ class Database:
                 conv.lead_sent_at = datetime.now()
                 await session.commit()
 
-    async def get_messages_after_lead(self, user_id: int, after_time: datetime) -> list[Message]:
+    async def get_messages_after_lead(
+        self, user_id: int, after_time: datetime
+    ) -> list[Message]:
         async with self._session_factory() as session:
             from sqlalchemy import select
 

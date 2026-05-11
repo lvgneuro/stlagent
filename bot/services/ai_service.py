@@ -20,15 +20,17 @@ async def load_catalog_urls() -> None:
     """Load model URLs from catalog parsers."""
     global model_url_cache
     try:
-        logger.info("Starting catalog URL loading...")
+        logger.info("Загрузка URL каталога...")
         from bot.services.catalog_parser import update_catalog_urls
 
         model_url_cache = await update_catalog_urls()
-        logger.info(f"Loaded {len(model_url_cache)} model URLs from catalogs")
+        logger.info(f"Загружено {len(model_url_cache)} URL моделей из каталогов")
     except Exception as e:
         import traceback
-        logger.warning(f"Failed to load catalog URLs: {e}")
+
+        logger.warning(f"Ошибка загрузки URL каталога: {e}")
         logger.warning(f"Traceback: {traceback.format_exc()}")
+
 
 WEB_SEARCH_TOOL = {
     "name": "web_search",
@@ -700,7 +702,9 @@ class AIService:
             user_has_photos = len(user_images) > 0
 
             context_parts = []
-            context_parts.append(f"У пользователя есть сохранённые фото: {'Да' if user_has_photos else 'Нет'}")
+            context_parts.append(
+                f"У пользователя есть сохранённые фото: {'Да' if user_has_photos else 'Нет'}"
+            )
 
             if user_facts:
                 context_parts.append(
@@ -755,11 +759,13 @@ class AIService:
                         result = await asyncio.to_thread(ims.generate, prompt)
 
                         if "error" in result:
-                            logger.warning(f"Image generation error: {result['error']}")
+                            logger.warning(
+                                f"Ошибка генерации изображения: {result['error']}"
+                            )
                         elif "url" in result:
                             image_url = result["url"]
                 except Exception as e:
-                    logger.warning(f"Image generation failed: {e}")
+                    logger.warning(f"Генерация изображения не удалась: {e}")
 
             url_pattern = re.compile(r"https?://[^\s]+")
             urls = url_pattern.findall(user_message)
@@ -784,17 +790,41 @@ class AIService:
             ]
             user_lower = user_message.lower()
             # Check for model numbers: К72, К25, Аруба, Венеция, Каро, Симпл, Тэйлор etc.
-            has_model = bool(re.search(r'к\d+|аруба|венеция|амиго| grand|лима|париж|сити|каро|симпл|тейлор|сноф|оскар', user_lower, re.IGNORECASE))
-            has_furniture_keyword = any(word in user_lower for word in furniture_tyumen_patterns)
+            has_model = bool(
+                re.search(
+                    r"к\d+|аруба|венеция|амиго| grand|лима|париж|сити|каро|симпл|тейлор|сноф|оскар",
+                    user_lower,
+                    re.IGNORECASE,
+                )
+            )
+            has_furniture_keyword = any(
+                word in user_lower for word in furniture_tyumen_patterns
+            )
             # Also check if client mentions link request
-            link_request = any(word in user_lower for word in ['ссылку', 'ссылка', 'сайт', 'каталог', 'покажи'])
+            link_request = any(
+                word in user_lower
+                for word in ["ссылку", "ссылка", "сайт", "каталог", "покажи"]
+            )
             # If model mentioned or link requested for known factories - trigger furniture context
-            is_tyumen_furniture = has_model or (link_request and (
-                'калинка' in user_lower or 'опрайм' in user_lower or 'оприме' in user_lower or
-                'ривалли' in user_lower or 'андреа' in user_lower
-            )) or (("тюмень" in user_lower or "тюмени" in user_lower) and has_furniture_keyword)
+            is_tyumen_furniture = (
+                has_model
+                or (
+                    link_request
+                    and (
+                        "калинка" in user_lower
+                        or "опрайм" in user_lower
+                        or "оприме" in user_lower
+                        or "ривалли" in user_lower
+                        or "андреа" in user_lower
+                    )
+                )
+                or (
+                    ("тюмень" in user_lower or "тюмени" in user_lower)
+                    and has_furniture_keyword
+                )
+            )
             logger.info(
-                f"Furniture check: is_tyumen_furniture={is_tyumen_furniture}, msg={user_message[:40]}"
+                f"Проверка мебели: is_tyumen_furniture={is_tyumen_furniture}, сообщение={user_message[:40]}"
             )
 
             needs_search = any(
@@ -802,7 +832,7 @@ class AIService:
             ) or bool(urls)
             search_result = ""
             if is_tyumen_furniture:
-                logger.info("Blocking search for furniture in Tyumen")
+                logger.info("Поиск заблокирован: мебель в Тюмени")
             elif needs_search:
                 try:
                     from bot.services.search_service import search_service as ss
@@ -810,9 +840,9 @@ class AIService:
                     result = await asyncio.to_thread(ss.search, user_message)
                     if result and result.strip():
                         search_result = result
-                        logger.info(f"Search result: {search_result[:200]}...")
+                        logger.info(f"Результат поиска: {search_result[:200]}...")
                 except Exception as e:
-                    logger.warning(f"Search failed: {e}")
+                    logger.warning(f"Ошибка поиска: {e}")
 
             system_with_context = SYSTEM_PROMPT
             if search_result:
@@ -829,7 +859,7 @@ class AIService:
                 )
 
             logger.info(
-                f"User facts: {user_facts}, context: {len(context_messages)} messages"
+                f"Факты пользователя: {user_facts}, контекст: {len(context_messages)} сообщений"
             )
         else:
             system_with_context = SYSTEM_PROMPT
@@ -849,26 +879,26 @@ class AIService:
 
         # Direct link handling - bypass AI for known link requests
         user_lower = user_message.lower()
-        link_keywords = ['ссылку', 'ссылка', 'сайт', 'каталог', 'покажи']
+        link_keywords = ["ссылку", "ссылка", "сайт", "каталог", "покажи"]
         factory_links = {
-            'калинка': 'https://mebel-kalinka.ru/',
-            'опрайм': 'https://oprime.ru/',
-            'oprime': 'https://oprime.ru/',
+            "калинка": "https://mebel-kalinka.ru/",
+            "опрайм": "https://oprime.ru/",
+            "oprime": "https://oprime.ru/",
         }
         # Model to factory mapping
         model_to_factory = {
-            'каро': 'опрайм',
-            'симпл': 'опрайм',
-            'тейлор': 'опрайм',
-            'сноф': 'опрайм',
-            'мэттью': 'опрайм',
-            'флай': 'опрайм',
-            'к25': 'калинка',
-            'к26': 'калинка',
-            'к72': 'калинка',
-            'grand': 'калинка',
-            'lario': 'калинка',
-            'оскар': 'калинка',
+            "каро": "опрайм",
+            "симпл": "опрайм",
+            "тейлор": "опрайм",
+            "сноф": "опрайм",
+            "мэттью": "опрайм",
+            "флай": "опрайм",
+            "к25": "калинка",
+            "к26": "калинка",
+            "к72": "калинка",
+            "grand": "калинка",
+            "lario": "калинка",
+            "оскар": "калинка",
         }
         if any(kw in user_lower for kw in link_keywords):
             # Check direct factory name
@@ -894,7 +924,7 @@ class AIService:
         messages.append({"role": "user", "content": user_message})
 
         try:
-            logger.info(f"Sending message to Claude: {user_message[:50]}...")
+            logger.info(f"Отправка сообщения в Claude: {user_message[:50]}...")
             response = await self._client.messages.create(
                 model="claude-sonnet-4-20250514",
                 max_tokens=1024,
@@ -902,7 +932,7 @@ class AIService:
                 messages=messages,
             )
 
-            logger.info(f"Response stop_reason: {response.stop_reason}")
+            logger.info(f"Причина остановки ответа: {response.stop_reason}")
 
             text = None
             for block in response.content:
@@ -920,14 +950,16 @@ class AIService:
 
             return response_text
         except Exception as e:
-            logger.error(f"Error getting AI response: {e}", exc_info=True)
+            logger.error(f"Ошибка получения ответа от AI: {e}", exc_info=True)
             return f"Sorry, I'm having trouble answering right now. ({type(e).__name__}: {e})"
 
     async def _extract_and_save_facts(
         self, user_message: str, bot_response: str, user_id: int
     ) -> None:
-        logger.debug(f"Extracting facts for user {user_id}: {user_message[:50]}...")
         try:
+            logger.debug(
+                f"Извлечение фактов для пользователя {user_id}: {user_message[:50]}..."
+            )
             extraction_prompt = f"""Извлеки факты о пользователе из этого разговора.
 
 Примеры фактов которые нужно искать:
@@ -974,12 +1006,12 @@ class AIService:
                                 context=f"{user_message[:100]} -> {bot_response[:100]}",
                             )
                 logger.info(
-                    f"Saved {len(facts) if isinstance(facts, list) else 0} facts for user {user_id}"
+                    f"Сохранено {len(facts) if isinstance(facts, list) else 0} фактов для пользователя {user_id}"
                 )
             except json.JSONDecodeError:
-                logger.warning(f"Failed to parse facts JSON: {text[:200]}")
+                logger.warning(f"Не удалось распарсить JSON с фактами: {text[:200]}")
         except Exception as e:
-            logger.error(f"Error extracting facts: {e}")
+            logger.error(f"Ошибка извлечения фактов: {e}")
 
     async def analyze_image(
         self, image_base64: str, question: str = "Опиши что ты видишь"
@@ -1014,7 +1046,7 @@ class AIService:
 
             return text if text else "Не удалось проанализировать изображение"
         except Exception as e:
-            logger.error(f"Error analyzing image: {e}", exc_info=True)
+            logger.error(f"Ошибка анализа изображения: {e}", exc_info=True)
             return f"Ошибка при анализе изображения: {type(e).__name__}: {e}"
 
     async def edit_image(self, image_base64: str, prompt: str) -> dict:
