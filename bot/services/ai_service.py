@@ -890,16 +890,32 @@ class AIService:
         user_lower = user_message.lower()
 
         # IMMEDIATE RETURN for KALINKA models - no conditions
-        if "калинка" in user_lower and any(
-            w in user_lower for w in ["ссылк", "сайт", "каталог", "покажи", "есть"]
-        ):
-            if "21" in user_lower or "к21" in user_lower:
-                return "Ссылка на модель: https://mebel-kalinka.ru/katalog/item/kalinka_21_1/"
-            if "25" in user_lower or "к25" in user_lower:
-                return "Ссылка на модель: https://mebel-kalinka.ru/katalog/item/kalinka_25/"
-            if "26" in user_lower or "к26" in user_lower:
-                return "Ссылка на модель: https://mebel-kalinka.ru/katalog/item/kalinka_26/"
-            return "Ссылка на сайт КАЛИНКА: https://mebel-kalinka.ru/"
+        if "калинка" in user_lower:
+            # Check for specific model requests
+            if any(w in user_lower for w in ["28", "к28"]):
+                response = (
+                    "Калинка К28: https://mebel-kalinka.ru/katalog/item/kalinka_28/\n\n"
+                    "К28 — модульный диван, БЕЗ механизма трансформации, БЕЗ короба для белья, НЕ раскладывается. "
+                    "Это стильная современная модель для тех, кто ищет диван как элемент интерьера без функции сна. "
+                    "Могу рассказать подробнее о характеристиках?"
+                )
+                return response
+            if any(w in user_lower for w in ["21", "к21"]):
+                return "Калинка К21: https://mebel-kalinka.ru/katalog/item/kalinka_21_1/"
+            if any(w in user_lower for w in ["25", "к25"]):
+                return "Калинка К25: https://mebel-kalinka.ru/katalog/item/kalinka_25/"
+            if any(w in user_lower for w in ["26", "к26"]):
+                return "Калинка К26: https://mebel-kalinka.ru/katalog/item/kalinka_26/"
+            if any(w in user_lower for w in ["72", "к72"]):
+                return "Калинка К72: https://mebel-kalinka.ru/katalog/item/kalinka_72/"
+            if any(w in user_lower for w in ["29", "к29"]):
+                return "Калинка К29: https://mebel-kalinka.ru/katalog/item/kalinka_29/"
+            if any(w in user_lower for w in ["30", "к30"]):
+                return "Калинка К30: https://mebel-kalinka.ru/katalog/item/kalinka_30/"
+            if any(w in user_lower for w in ["31", "к31"]):
+                return "Калинка К31: https://mebel-kalinka.ru/katalog/item/kalinka_31/"
+            if any(w in user_lower for w in ["ссылк", "сайт", "каталог"]):
+                return "Сайт КАЛИНКА: https://mebel-kalinka.ru/"
 
         link_keywords = ["ссылку", "ссылка", "сайт", "каталог", "покажи"]
         factory_links = {
@@ -959,7 +975,7 @@ class AIService:
                     return f"Ссылка на модель: {url}"
             # Last resort - give factory link for калинка
             if "калинка" in user_lower:
-                return f"Ссылка на сайт КАЛИНКА: https://mebel-kalinka.ru/"
+                return "Ссылка на сайт КАЛИНКА: https://mebel-kalinka.ru/"
 
         messages.append({"role": "user", "content": user_message})
 
