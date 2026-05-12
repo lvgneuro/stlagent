@@ -78,6 +78,10 @@ async def parse_oprime() -> dict[str, str]:
                 "флай": "https://oprime.ru/catalog/divany/fly-t310",
                 "fly": "https://oprime.ru/catalog/divany/fly-t310",
                 "taylor": "https://oprime.ru/catalog/divany/taylor-a4l-t3s-a4p",
+                "вега": "https://oprime.ru/modeli/vega",
+                "тулип": "https://oprime.ru/modeli/tulip",
+                "сноб": "https://oprime.ru/modeli/snob",
+                "уно": "https://oprime.ru/catalog/divany/uno-a21o",
             }
             # KALINKA known models - verified URLs
             kalinka_models = {

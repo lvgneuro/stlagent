@@ -291,6 +291,10 @@ Soft Dream: мягкий диван с округлыми формами.
 Кор: диван.
 Ричмонд: диван.
 Монако: диван.
+Вега: https://oprime.ru/modeli/vega — прямой диван.
+Тулип: https://oprime.ru/modeli/tulip — диван с подъёмным механизмом.
+Сноб: https://oprime.ru/modeli/snob — диван.
+Уно: https://oprime.ru/catalog/divany/uno-a21o — диван.
 
 === ОПРАЙМ (кресла) ===
 Мэттью: кресло.
