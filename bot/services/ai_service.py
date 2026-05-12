@@ -911,9 +911,9 @@ class AIService:
             if any(w in user_lower for w in ["29", "к29"]):
                 return "Калинка К29: https://mebel-kalinka.ru/katalog/item/kalinka_29/"
             if any(w in user_lower for w in ["30", "к30"]):
-                return "Калинка К30: https://mebel-kalinka.ru/katalog/item/kalinka_30/"
+                return "Калинка К30: https://mebel-kalinka.ru/katalog/item/kalinka_30_1/"
             if any(w in user_lower for w in ["31", "к31"]):
-                return "Калинка К31: https://mebel-kalinka.ru/katalog/item/kalinka_31/"
+                return "Калинка К31: https://mebel-kalinka.ru/katalog/item/kalinka_30/"
             if any(w in user_lower for w in ["ссылк", "сайт", "каталог"]):
                 return "Сайт КАЛИНКА: https://mebel-kalinka.ru/"
 

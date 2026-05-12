@@ -92,14 +92,14 @@ async def parse_oprime() -> dict[str, str]:
                 "domus": "https://mebel-kalinka.ru/katalog/item/domus/",
                 "к28": "https://mebel-kalinka.ru/katalog/item/kalinka_28/",
                 "к29": "https://mebel-kalinka.ru/katalog/item/kalinka_29/",
-                "к30": "https://mebel-kalinka.ru/katalog/item/kalinka_30/",
-                "к31": "https://mebel-kalinka.ru/katalog/item/kalinka_31/",
+                "к30": "https://mebel-kalinka.ru/katalog/item/kalinka_30_1/",
+                "к31": "https://mebel-kalinka.ru/katalog/item/kalinka_30/",
                 "калинка к28": "https://mebel-kalinka.ru/katalog/item/kalinka_28/",
                 "калинка-28": "https://mebel-kalinka.ru/katalog/item/kalinka_28/",
                 "калинка 28": "https://mebel-kalinka.ru/katalog/item/kalinka_28/",
                 "калинка к29": "https://mebel-kalinka.ru/katalog/item/kalinka_29/",
-                "калинка к30": "https://mebel-kalinka.ru/katalog/item/kalinka_30/",
-                "калинка к31": "https://mebel-kalinka.ru/katalog/item/kalinka_31/",
+                "калинка к30": "https://mebel-kalinka.ru/katalog/item/kalinka_30_1/",
+                "калинка к31": "https://mebel-kalinka.ru/katalog/item/kalinka_30/",
             }
             # Add with proper format
             for name, url in kalinka_models.items():
