@@ -63,32 +63,35 @@ class SearchService:
     def search(self, query: str) -> str:
         try:
             results = self._tavily.search(query=query, max_results=5)
-            if not results.get("results"):
-                return "No results found."
-            summary = []
-            for r in results["results"]:
-                summary.append(f"- {r['title']}: {r['content'][:200]}...")
+            if results.get("results"):
+                summary = []
+                for r in results["results"]:
+                    summary.append(f"- {r['title']}: {r['content'][:200]}...")
+                tavily_result = "\n".join(summary)
+            else:
+                tavily_result = ""
 
-            tavily_result = "\n".join(summary)
-
-            city_indicators = [
-                "тюмень",
-                "екатеринбург",
-                "москва",
-                "спб",
-                "питер",
-                "новосибирск",
-                "челябинск",
-                "казани",
+            non_furniture_topics = [
+                "погода",
+                "новости",
+                "курс",
+                "цена",
+                "стоимость",
+                "работа",
+                "как добраться",
+                "расписание",
+                "время работы",
             ]
-            needs_local = any(word in query.lower() for word in city_indicators)
+            is_general_topic = any(word in query.lower() for word in non_furniture_topics)
 
-            if needs_local:
+            if is_general_topic or not tavily_result:
                 ddg_result = self._search_with_fallback(query)
                 if ddg_result:
-                    return tavily_result + "\n\nЛокальные данные:\n" + ddg_result
+                    if tavily_result:
+                        return tavily_result + "\n\nЛокальные данные:\n" + ddg_result
+                    return ddg_result
 
-            return tavily_result
+            return tavily_result if tavily_result else "No results found."
         except Exception as e:
             logger.error(f"Search error: {e}")
             return f"Search failed: {type(e).__name__}"
