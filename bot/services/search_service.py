@@ -38,6 +38,19 @@ class SearchService:
         self._tavily = TavilyClient(api_key=tavily_key)
         self._ddgs = DDGS()
 
+    def _filter_stoplist(self, text: str) -> str:
+        if not text:
+            return text
+        lines = text.split("\n")
+        filtered = []
+        for line in lines:
+            lower = line.lower()
+            if any(brand in lower for brand in self.STOP_LIST):
+                continue
+            filtered.append(line)
+        result = "\n".join(filtered)
+        return result if result.strip() else text
+
     def _search_web(self, query: str) -> str:
         """Try Tavily first, fall back to DuckDuckGo HTML backend."""
         result = self._search_tavily(query)
