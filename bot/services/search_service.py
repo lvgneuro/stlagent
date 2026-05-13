@@ -84,8 +84,18 @@ class SearchService:
                     )
         return ""
 
-    def search(self, query: str) -> str:
+def search(self, query: str) -> str:
         try:
+            is_weather = "погод" in query.lower()
+
+            if is_weather:
+                ddg_result = self._search_duckduckgo(query)
+                if ddg_result:
+                    logger.info("Found weather via DuckDuckGo")
+                    return ddg_result
+                fallback = self._search_with_fallback(query)
+                return fallback if fallback else "No results found."
+
             tavily_result = self._search_tavily(query)
 
             non_furniture_topics = [
@@ -99,9 +109,7 @@ class SearchService:
                 "расписание",
                 "время работы",
             ]
-            is_general_topic = any(
-                word in query.lower() for word in non_furniture_topics
-            )
+            is_general_topic = any(word in query.lower() for word in non_furniture_topics)
 
             if is_general_topic or not tavily_result:
                 ddg_result = self._search_with_fallback(query)
