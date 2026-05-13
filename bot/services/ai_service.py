@@ -1023,7 +1023,7 @@ class AIService:
         try:
             logger.info(f"Отправка сообщения в Claude: {user_message[:50]}...")
             response = await self._client.messages.create(
-                model="claude-sonnet-4-20250514",
+                model="claude-sonnet-4-6",
                 max_tokens=1024,
                 system=system_with_context,
                 messages=messages,
@@ -1077,7 +1077,7 @@ class AIService:
 Если фактов нет - верни пустой массив []."""
 
             response = await self._client.messages.create(
-                model="claude-sonnet-4-20250514",
+                model="claude-sonnet-4-6",
                 max_tokens=500,
                 messages=[{"role": "user", "content": extraction_prompt}],
             )
@@ -1130,7 +1130,7 @@ class AIService:
             ]
 
             response = await self._client.messages.create(
-                model="claude-sonnet-4-20250514",
+                model="claude-sonnet-4-6",
                 max_tokens=1024,
                 messages=[{"role": "user", "content": content}],
             )
