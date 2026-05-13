@@ -84,7 +84,7 @@ class SearchService:
                     )
         return ""
 
-def search(self, query: str) -> str:
+    def search(self, query: str) -> str:
         try:
             is_weather = "погод" in query.lower()
 

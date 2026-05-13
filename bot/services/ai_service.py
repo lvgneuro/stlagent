@@ -843,23 +843,9 @@ class AIService:
                 )
             )
 
-            # Check context from previous messages if no furniture detected yet
-            if not is_tyumen_furniture and context_messages:
-                furniture_context_keywords = ["диван", "кровать", "матрас", "кресло", "калинка", "опрайм", "ривалли", "андреа", "lineaflex", "линеафлекс"]
-                recent_context = " ".join(context_messages[-5:]).lower()
-                if any(kw in recent_context for kw in furniture_context_keywords):
-                    is_tyumen_furniture = True
-                    logger.info("Мебель определена по контексту из прошлых сообщений")
-            logger.info(
-                f"Проверка мебели: is_tyumen_furniture={is_tyumen_furniture}, сообщение={user_message[:40]}"
-            )
-
-            needs_search = any(
-                word in user_lower for word in search_indicators
-            ) or bool(urls)
-
             non_furniture_topics = [
-                "погода",
+                "погод",
+                "прогноз",
                 "новости",
                 "курс",
                 "цена",
@@ -875,6 +861,21 @@ class AIService:
                 "будет ли",
             ]
             is_general_topic = any(word in user_lower for word in non_furniture_topics)
+
+            # Check context from previous messages if no furniture detected yet
+            if not is_tyumen_furniture and not is_general_topic and context_messages:
+                furniture_context_keywords = ["диван", "кровать", "матрас", "кресло", "калинка", "опрайм", "ривалли", "андреа", "lineaflex", "линеафлекс"]
+                recent_context = " ".join(context_messages[-5:]).lower()
+                if any(kw in recent_context for kw in furniture_context_keywords):
+                    is_tyumen_furniture = True
+                    logger.info("Мебель определена по контексту из прошлых сообщений")
+            logger.info(
+                f"Проверка мебели: is_tyumen_furniture={is_tyumen_furniture}, сообщение={user_message[:40]}"
+            )
+
+            needs_search = any(
+                word in user_lower for word in search_indicators
+            ) or bool(urls)
 
             search_result = ""
             if is_tyumen_furniture and not is_general_topic:
