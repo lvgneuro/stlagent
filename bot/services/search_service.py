@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 import os
+import time
 
 from tavily import TavilyClient
 from duckduckgo_search import DDGS
@@ -60,16 +61,32 @@ class SearchService:
 
         return ""
 
+    def _search_tavily(self, query: str, max_retries: int = 3) -> str:
+        for attempt in range(max_retries):
+            try:
+                results = self._tavily.search(query=query, max_results=5)
+                if results.get("results"):
+                    summary = []
+                    for r in results["results"]:
+                        summary.append(f"- {r['title']}: {r['content'][:200]}...")
+                    return "\n".join(summary)
+                return ""
+            except Exception as e:
+                if attempt < max_retries - 1:
+                    wait = (attempt + 1) * 1.5
+                    logger.warning(
+                        f"Tavily attempt {attempt + 1} failed: {e}. Retrying in {wait}s..."
+                    )
+                    time.sleep(wait)
+                else:
+                    logger.error(
+                        f"Tavily search failed after {max_retries} attempts: {e}"
+                    )
+        return ""
+
     def search(self, query: str) -> str:
         try:
-            results = self._tavily.search(query=query, max_results=5)
-            if results.get("results"):
-                summary = []
-                for r in results["results"]:
-                    summary.append(f"- {r['title']}: {r['content'][:200]}...")
-                tavily_result = "\n".join(summary)
-            else:
-                tavily_result = ""
+            tavily_result = self._search_tavily(query)
 
             non_furniture_topics = [
                 "погода",
@@ -82,7 +99,9 @@ class SearchService:
                 "расписание",
                 "время работы",
             ]
-            is_general_topic = any(word in query.lower() for word in non_furniture_topics)
+            is_general_topic = any(
+                word in query.lower() for word in non_furniture_topics
+            )
 
             if is_general_topic or not tavily_result:
                 ddg_result = self._search_with_fallback(query)
