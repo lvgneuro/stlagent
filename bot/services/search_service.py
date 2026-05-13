@@ -34,22 +34,17 @@ class SearchService:
         self._tavily = TavilyClient(api_key=tavily_key)
         self._ddgs = DDGS()
 
-    def _filter_stoplist(self, text: str) -> str:
-        if not text:
-            return text
-        lines = text.split("\n")
-        filtered = []
-        for line in lines:
-            lower = line.lower()
-            if any(brand in lower for brand in self.STOP_LIST):
-                continue
-            filtered.append(line)
-        result = "\n".join(filtered)
-        return result if result.strip() else text + "\n\n[Результаты по некоторым запросам скрыты по стоп-листу]"
+    def _search_web(self, query: str) -> str:
+        """Try Tavily first, fall back to DuckDuckGo HTML backend."""
+        result = self._search_tavily(query)
+        if result:
+            return result
+        result = self._search_duckduckgo(query)
+        return result if result else ""
 
     def _search_duckduckgo(self, query: str) -> str:
         try:
-            results = list(self._ddgs.text(query, max_results=8))
+            results = list(self._ddgs.text(query, max_results=8, backend="html"))
             if not results:
                 return ""
             summary = []
@@ -103,6 +98,10 @@ class SearchService:
             "ну", "ой", "ах", "эх", "вот", "это", "этот",
             "деплой", "деплоя", "деплою",
             "на", "от", "до", "про", "для", "без", "через",
+            "мой", "моя", "моё", "мои", "моего", "моей", "моему",
+            "твой", "твоя", "твоё", "твои",
+            "ваш", "ваша", "ваше", "ваши",
+            "же", "ж", "ли", "бы", "ведь", "даже", "уже",
         }
         import re
         words = re.findall(r"[а-яёa-z]+", raw.lower())
@@ -121,49 +120,27 @@ class SearchService:
                 clean = self._dedup_clean(clean, "погод")
                 search_q = f"погода {clean}" if clean else "погода сегодня"
                 logger.info(f"Weather query: raw='{query}' -> search='{search_q}'")
-                ddg_result = self._filter_stoplist(self._search_duckduckgo(search_q))
-                if ddg_result:
-                    return ddg_result
-                return "No results found."
+                result = self._filter_stoplist(self._search_web(search_q))
+                if result:
+                    return result
 
             if "курс" in lower or "доллар" in lower or "евро" in lower:
                 search_q = f"курс {'доллара' if 'доллар' in lower else 'евро'} цб рф сегодня"
                 logger.info(f"Currency query: raw='{query}' -> search='{search_q}'")
-                ddg_result = self._filter_stoplist(self._search_duckduckgo(search_q))
-                if ddg_result:
-                    return ddg_result
+                result = self._filter_stoplist(self._search_web(search_q))
+                if result:
+                    return result
 
             if "гороскоп" in lower:
                 clean = self._dedup_clean(clean, "гороскоп")
                 search_q = f"гороскоп {clean} сегодня" if clean else "гороскоп сегодня"
                 logger.info(f"Horoscope query: raw='{query}' -> search='{search_q}'")
-                ddg_result = self._filter_stoplist(self._search_duckduckgo(search_q))
-                if ddg_result:
-                    return ddg_result
+                result = self._filter_stoplist(self._search_web(search_q))
+                if result:
+                    return result
 
-            tavily_result = self._filter_stoplist(self._search_tavily(query))
-
-            non_furniture_topics = [
-                "погода",
-                "новости",
-                "курс",
-                "цена",
-                "стоимость",
-                "работа",
-                "как добраться",
-                "расписание",
-                "время работы",
-            ]
-            is_general_topic = any(word in query.lower() for word in non_furniture_topics)
-
-            if is_general_topic or not tavily_result:
-                ddg_result = self._filter_stoplist(self._search_duckduckgo(clean))
-                if ddg_result:
-                    if tavily_result:
-                        return self._filter_stoplist(tavily_result + "\n\nЛокальные данные:\n" + ddg_result)
-                    return ddg_result
-
-            return tavily_result if tavily_result else "No results found."
+            result = self._filter_stoplist(self._search_web(clean if clean else query))
+            return result if result else "No results found."
         except Exception as e:
             logger.error(f"Search error: {e}")
             return f"Search failed: {type(e).__name__}"
