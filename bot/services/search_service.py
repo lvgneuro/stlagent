@@ -65,33 +65,6 @@ class SearchService:
             logger.warning(f"DuckDuckGo search failed: {e}")
             return ""
 
-    def _search_with_fallback(self, query: str) -> str:
-        result = self._search_duckduckgo(query)
-        if result:
-            return result
-
-        fallback_queries = [
-            f"{query} адрес",
-            f"{query} магазин",
-            f"{query} салон",
-            f"{query} site:2gis.ru",
-            f"{query} Тюмень адрес где купить",
-            "калинка диваны тюмень",
-            "калинка мебель тюмень официальный сайт",
-            '"Калинка" диван Тюмень купить',
-        ]
-
-        seen = set()
-        for q in fallback_queries:
-            if q.lower() in seen:
-                continue
-            seen.add(q.lower())
-            result = self._search_duckduckgo(q)
-            if result:
-                return result
-
-        return ""
-
     def _search_tavily(self, query: str) -> str:
         try:
             results = self._tavily.search(
@@ -114,20 +87,49 @@ class SearchService:
             logger.warning(f"Tavily search failed: {e}")
             return ""
 
+    @staticmethod
+    def _clean_query(raw: str) -> str:
+        words_to_remove = [
+            "дашь", "дай", "дайте", "знаешь", "знаете", "расскажи", "расскажите",
+            "пожалуйста", "наконец", "есть", "можешь", "можете", "хочешь",
+            "скажи", "найди", "покажи", "покажите", "ищу", "ищете",
+            "нужен", "нужна", "нужно", "нужны", "подскажи", "может",
+            "где", "когда", "как", "что", "зачем", "почему",
+            "тебя", "меня", "мне", "тебе", "себя", "себе",
+            "там", "тут", "здесь", "сейчас", "сегодня", "вчера", "завтра",
+        ]
+        result = raw.lower()
+        for w in words_to_remove:
+            result = result.replace(w, "")
+        result = " ".join(result.split())
+        return result if result else raw
+
     def search(self, query: str) -> str:
         try:
-            is_weather = "погод" in query.lower()
+            clean = self._clean_query(query)
+            lower = query.lower()
 
-            if is_weather:
-                logger.info(f"Weather query detected: {query}")
-                ddg_result = self._filter_stoplist(self._search_duckduckgo(query))
-                logger.info(f"DuckDuckGo raw result length: {len(ddg_result) if ddg_result else 0}")
+            if "погод" in lower:
+                search_q = f"погода {clean}" if clean else "погода сегодня"
+                logger.info(f"Weather query: raw='{query}' -> search='{search_q}'")
+                ddg_result = self._filter_stoplist(self._search_duckduckgo(search_q))
                 if ddg_result:
-                    logger.info("Found weather via DuckDuckGo")
                     return ddg_result
-                fallback = self._filter_stoplist(self._search_with_fallback(query))
-                logger.info(f"Fallback result length: {len(fallback) if fallback else 0}")
-                return fallback if fallback else "No results found."
+                return "No results found."
+
+            if "курс" in lower or "доллар" in lower or "евро" in lower:
+                search_q = f"курс {'доллара' if 'доллар' in lower else 'евро'} цб рф сегодня"
+                logger.info(f"Currency query: raw='{query}' -> search='{search_q}'")
+                ddg_result = self._filter_stoplist(self._search_duckduckgo(search_q))
+                if ddg_result:
+                    return ddg_result
+
+            if "гороскоп" in lower:
+                search_q = f"гороскоп {clean} сегодня"
+                logger.info(f"Horoscope query: raw='{query}' -> search='{search_q}'")
+                ddg_result = self._filter_stoplist(self._search_duckduckgo(search_q))
+                if ddg_result:
+                    return ddg_result
 
             tavily_result = self._filter_stoplist(self._search_tavily(query))
 
@@ -145,7 +147,7 @@ class SearchService:
             is_general_topic = any(word in query.lower() for word in non_furniture_topics)
 
             if is_general_topic or not tavily_result:
-                ddg_result = self._filter_stoplist(self._search_with_fallback(query))
+                ddg_result = self._filter_stoplist(self._search_duckduckgo(clean))
                 if ddg_result:
                     if tavily_result:
                         return self._filter_stoplist(tavily_result + "\n\nЛокальные данные:\n" + ddg_result)
