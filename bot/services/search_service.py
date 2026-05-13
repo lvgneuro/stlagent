@@ -89,7 +89,7 @@ class SearchService:
 
     @staticmethod
     def _clean_query(raw: str) -> str:
-        words_to_remove = [
+        stop_words = {
             "дашь", "дай", "дайте", "знаешь", "знаете", "расскажи", "расскажите",
             "пожалуйста", "наконец", "есть", "можешь", "можете", "хочешь",
             "скажи", "найди", "покажи", "покажите", "ищу", "ищете",
@@ -97,12 +97,20 @@ class SearchService:
             "где", "когда", "как", "что", "зачем", "почему",
             "тебя", "меня", "мне", "тебе", "себя", "себе",
             "там", "тут", "здесь", "сейчас", "сегодня", "вчера", "завтра",
-        ]
-        result = raw.lower()
-        for w in words_to_remove:
-            result = result.replace(w, "")
-        result = " ".join(result.split())
-        return result if result else raw
+            "так", "сделать", "сделал", "сделали", "сделай", "сделаю",
+            "делать", "делаю", "делаешь", "делаем", "делаете",
+            "просто", "вообще", "ладно", "хорошо", "конечно",
+            "ну", "ой", "ах", "эх", "вот", "это", "этот",
+            "деплой", "деплоя", "деплою",
+            "на", "от", "до", "про", "для", "без", "через",
+        }
+        import re
+        words = re.findall(r"[а-яёa-z]+", raw.lower())
+        kept = [w for w in words if w not in stop_words and len(w) > 1]
+        return " ".join(kept) if kept else raw
+
+    def _dedup_clean(self, clean: str, word: str) -> str:
+        return " ".join(w for w in clean.split() if word not in w)
 
     def search(self, query: str) -> str:
         try:
@@ -110,6 +118,7 @@ class SearchService:
             lower = query.lower()
 
             if "погод" in lower:
+                clean = self._dedup_clean(clean, "погод")
                 search_q = f"погода {clean}" if clean else "погода сегодня"
                 logger.info(f"Weather query: raw='{query}' -> search='{search_q}'")
                 ddg_result = self._filter_stoplist(self._search_duckduckgo(search_q))
@@ -125,7 +134,8 @@ class SearchService:
                     return ddg_result
 
             if "гороскоп" in lower:
-                search_q = f"гороскоп {clean} сегодня"
+                clean = self._dedup_clean(clean, "гороскоп")
+                search_q = f"гороскоп {clean} сегодня" if clean else "гороскоп сегодня"
                 logger.info(f"Horoscope query: raw='{query}' -> search='{search_q}'")
                 ddg_result = self._filter_stoplist(self._search_duckduckgo(search_q))
                 if ddg_result:
