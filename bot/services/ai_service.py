@@ -870,13 +870,14 @@ class AIService:
                 try:
                     from bot.services.search_service import search_service
 
+                    logger.info(f"Imported search_service: {type(search_service)}, dir: {[x for x in dir(search_service) if not x.startswith('_')]}")
                     if hasattr(search_service, 'search'):
                         result = await asyncio.to_thread(search_service.search, user_message)
                         if result and result.strip():
                             search_result = result
                             logger.info(f"Результат поиска: {search_result[:200]}...")
                     else:
-                        logger.warning("search_service не имеет метода search")
+                        logger.warning(f"search_service не имеет метода search, тип: {type(search_service)}")
                 except Exception as e:
                     logger.warning(f"Ошибка поиска: {e}")
 
