@@ -233,8 +233,33 @@ class SearchService:
                 "лев": 5, "дева": 6, "весы": 7, "скорпион": 8,
                 "стрелец": 9, "козерог": 10, "водолей": 11, "рыбы": 12,
             }
-            for name, num in sign_map.items():
-                if name in sign.lower():
+            sign_variants = {
+                "овен": 1, "овна": 1, "овну": 1,
+                "телец": 2, "тельца": 2, "тельцу": 2,
+                "близнецы": 3, "близнецов": 3,
+                "рак": 4, "рака": 4, "раку": 4,
+                "лев": 5, "льва": 5, "льву": 5,
+                "дева": 6, "девы": 6, "деве": 6,
+                "весы": 7, "весов": 7,
+                "скорпион": 8, "скорпиона": 8, "скорпиону": 8,
+                "стрелец": 9, "стрельца": 9, "стрельцу": 9,
+                "козерог": 10, "козерога": 10, "козерогу": 10,
+                "водолей": 11, "водолея": 11, "водолею": 11,
+                "рыбы": 12, "рыб": 12,
+            }
+            sign_lower = sign.lower()
+            num = None
+            matched_name = None
+            for name, n in sign_variants.items():
+                if name in sign_lower:
+                    num = n
+                    matched_name = {
+                        1: "Овен", 2: "Телец", 3: "Близнецы", 4: "Рак",
+                        5: "Лев", 6: "Дева", 7: "Весы", 8: "Скорпион",
+                        9: "Стрелец", 10: "Козерог", 11: "Водолей", 12: "Рыбы",
+                    }[n]
+                    break
+            if num and matched_name:
                     req = urllib.request.Request(
                         f"https://ignio.com/r/dly/export/astrologic/xml/{num}.xml",
                         headers={"User-Agent": "Mozilla/5.0"},
@@ -245,7 +270,7 @@ class SearchService:
                     if m:
                         text = m.group(1).strip()
                         text = re.sub(r"<[^>]+>", "", text)
-                        return f"Гороскоп для {name.capitalize()} на сегодня:\n{text[:500]}"
+                        return f"Гороскоп для {matched_name} на сегодня:\n{text[:500]}"
             return f"Гороскоп на сегодня: {sign} — уточните знак зодиака (овен, телец и т.д.)"
         except Exception as e:
             logger.warning(f"Horoscope API failed: {e}")
