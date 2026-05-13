@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import logging
 import os
-import time
 
 from tavily import TavilyClient
 from duckduckgo_search import DDGS
@@ -56,10 +55,12 @@ class SearchService:
             summary = []
             for r in results:
                 title = r.get("title", "")
+                body = r.get("body", "")
                 href = r.get("href", "")
-                if title and href:
-                    summary.append(f"- {title}: {href}")
-            return "\n".join(summary) if summary else ""
+                if not title or not body:
+                    continue
+                summary.append(f"- {title}: {body[:300]}")
+            return "\n\n".join(summary) if summary else ""
         except Exception as e:
             logger.warning(f"DuckDuckGo search failed: {e}")
             return ""
@@ -91,28 +92,27 @@ class SearchService:
 
         return ""
 
-    def _search_tavily(self, query: str, max_retries: int = 3) -> str:
-        for attempt in range(max_retries):
-            try:
-                results = self._tavily.search(query=query, max_results=5)
-                if results.get("results"):
-                    summary = []
-                    for r in results["results"]:
-                        summary.append(f"- {r['title']}: {r['content'][:200]}...")
-                    return "\n".join(summary)
-                return ""
-            except Exception as e:
-                if attempt < max_retries - 1:
-                    wait = (attempt + 1) * 1.5
-                    logger.warning(
-                        f"Tavily attempt {attempt + 1} failed: {e}. Retrying in {wait}s..."
-                    )
-                    time.sleep(wait)
-                else:
-                    logger.error(
-                        f"Tavily search failed after {max_retries} attempts: {e}"
-                    )
-        return ""
+    def _search_tavily(self, query: str) -> str:
+        try:
+            results = self._tavily.search(
+                query=query,
+                max_results=5,
+                include_answer=True,
+            )
+            if results.get("answer"):
+                summary = [f"Краткий ответ: {results['answer'][:500]}"]
+            else:
+                summary = []
+            if results.get("results"):
+                for r in results["results"][:3]:
+                    content = r.get("content", "")[:200]
+                    title = r.get("title", "")
+                    if title and content:
+                        summary.append(f"- {title}: {content}")
+            return "\n\n".join(summary) if summary else ""
+        except Exception as e:
+            logger.warning(f"Tavily search failed: {e}")
+            return ""
 
     def search(self, query: str) -> str:
         try:
