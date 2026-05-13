@@ -89,11 +89,14 @@ def search(self, query: str) -> str:
             is_weather = "погод" in query.lower()
 
             if is_weather:
+                logger.info(f"Weather query detected: {query}")
                 ddg_result = self._search_duckduckgo(query)
+                logger.info(f"DuckDuckGo raw result length: {len(ddg_result) if ddg_result else 0}")
                 if ddg_result:
                     logger.info("Found weather via DuckDuckGo")
                     return ddg_result
                 fallback = self._search_with_fallback(query)
+                logger.info(f"Fallback result length: {len(fallback) if fallback else 0}")
                 return fallback if fallback else "No results found."
 
             tavily_result = self._search_tavily(query)
