@@ -868,12 +868,15 @@ class AIService:
                 logger.info("Поиск заблокирован: мебель в Тюмени")
             elif needs_search or is_general_topic:
                 try:
-                    from bot.services.search_service import search_service as ss
+                    from bot.services.search_service import search_service
 
-                    result = await asyncio.to_thread(ss.search, user_message)
-                    if result and result.strip():
-                        search_result = result
-                        logger.info(f"Результат поиска: {search_result[:200]}...")
+                    if hasattr(search_service, 'search'):
+                        result = await asyncio.to_thread(search_service.search, user_message)
+                        if result and result.strip():
+                            search_result = result
+                            logger.info(f"Результат поиска: {search_result[:200]}...")
+                    else:
+                        logger.warning("search_service не имеет метода search")
                 except Exception as e:
                     logger.warning(f"Ошибка поиска: {e}")
 
