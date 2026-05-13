@@ -11,12 +11,42 @@ logger = logging.getLogger(__name__)
 
 
 class SearchService:
+
+    STOP_LIST = [
+        "askona", "аскона",
+        "moon", "моон",
+        "ormatek", "орматек",
+        "arti mobili", "арти мобили",
+        "pushe", "пуше",
+        "erga", "эрга", "эргомебель",
+        "8 марта",
+        "братьев баженовых",
+        "пинскдрев",
+        "100 диванов",
+        "мебельград",
+        "33 комода",
+        "диваны.ру", "диваны ру",
+    ]
+
     def __init__(self) -> None:
         tavily_key = os.getenv("TAVILY_API_KEY")
         if not tavily_key:
             raise ValueError("TAVILY_API_KEY not found in .env file")
         self._tavily = TavilyClient(api_key=tavily_key)
         self._ddgs = DDGS()
+
+    def _filter_stoplist(self, text: str) -> str:
+        if not text:
+            return text
+        lines = text.split("\n")
+        filtered = []
+        for line in lines:
+            lower = line.lower()
+            if any(brand in lower for brand in self.STOP_LIST):
+                continue
+            filtered.append(line)
+        result = "\n".join(filtered)
+        return result if result.strip() else text + "\n\n[Результаты по некоторым запросам скрыты по стоп-листу]"
 
     def _search_duckduckgo(self, query: str) -> str:
         try:
@@ -90,16 +120,16 @@ class SearchService:
 
             if is_weather:
                 logger.info(f"Weather query detected: {query}")
-                ddg_result = self._search_duckduckgo(query)
+                ddg_result = self._filter_stoplist(self._search_duckduckgo(query))
                 logger.info(f"DuckDuckGo raw result length: {len(ddg_result) if ddg_result else 0}")
                 if ddg_result:
                     logger.info("Found weather via DuckDuckGo")
                     return ddg_result
-                fallback = self._search_with_fallback(query)
+                fallback = self._filter_stoplist(self._search_with_fallback(query))
                 logger.info(f"Fallback result length: {len(fallback) if fallback else 0}")
                 return fallback if fallback else "No results found."
 
-            tavily_result = self._search_tavily(query)
+            tavily_result = self._filter_stoplist(self._search_tavily(query))
 
             non_furniture_topics = [
                 "погода",
@@ -115,10 +145,10 @@ class SearchService:
             is_general_topic = any(word in query.lower() for word in non_furniture_topics)
 
             if is_general_topic or not tavily_result:
-                ddg_result = self._search_with_fallback(query)
+                ddg_result = self._filter_stoplist(self._search_with_fallback(query))
                 if ddg_result:
                     if tavily_result:
-                        return tavily_result + "\n\nЛокальные данные:\n" + ddg_result
+                        return self._filter_stoplist(tavily_result + "\n\nЛокальные данные:\n" + ddg_result)
                     return ddg_result
 
             return tavily_result if tavily_result else "No results found."
