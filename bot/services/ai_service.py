@@ -593,8 +593,12 @@ class AIService:
 
             logger.info(f"Причина остановки ответа: {response.stop_reason}")
 
-            # Handle tool calls
-            if response.stop_reason == "tool_use":
+            # Handle tool calls (loop for multiple iterations)
+            max_tool_iterations = 3
+            for _ in range(max_tool_iterations):
+                if response.stop_reason != "tool_use":
+                    break
+
                 messages.append({"role": "assistant", "content": response.content})
                 for block in response.content:
                     if hasattr(block, "name") and block.name == "search_catalog":
@@ -613,7 +617,6 @@ class AIService:
                                 }
                             ],
                         })
-                # Second call with tool result
                 response = await self._client.messages.create(
                     model="claude-sonnet-4-6",
                     max_tokens=1024,
