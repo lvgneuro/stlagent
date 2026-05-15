@@ -613,7 +613,7 @@ class AIService:
                                 {
                                     "type": "tool_result",
                                     "tool_use_id": block.id,
-                                    "content": result[:2000],
+                                    "content": result[:4000],
                                 }
                             ],
                         })

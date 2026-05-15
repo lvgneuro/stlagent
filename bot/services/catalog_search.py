@@ -22,6 +22,11 @@ def _load_catalog() -> str:
     return _catalog_text
 
 
+def _word_match_count(line: str, words: list[str]) -> int:
+    lowered = line.lower()
+    return sum(1 for w in words if w in lowered)
+
+
 def search_catalog(query: str) -> str:
     """Search the furniture catalog by query string.
 
@@ -33,33 +38,48 @@ def search_catalog(query: str) -> str:
 
     query_lower = query.lower()
     words = query_lower.split()
+    n_words = len(words)
 
     lines = catalog.split("\n")
-    matched = []
+    matched: list[str] = []
     current_section = ""
+    active_sections: set[str] = set()
+    shown_sections: set[str] = set()
+    # For single-word queries, any match in a section header is enough
+    # For multi-word queries, require at least 2 words to match a section
+    min_section_match = 1 if n_words == 1 else max(2, n_words // 2 + 1)
 
     for line in lines:
         stripped = line.strip()
         if not stripped:
             continue
 
-        # Track section headers
-        if stripped.startswith("===") or stripped.startswith("---"):
+        is_section_header = stripped.startswith("===") or stripped.startswith("---")
+
+        if is_section_header:
             current_section = stripped
-            if all(w in stripped.lower() for w in words) or any(
-                w in stripped.lower() for w in words
-            ):
+            if _word_match_count(stripped, words) >= min_section_match:
+                active_sections.add(stripped)
                 matched.append(stripped)
+                shown_sections.add(stripped)
             continue
 
-        is_match = all(w in stripped.lower() for w in words) or any(
-            w in stripped.lower() for w in words
-        )
-        if is_match:
-            if current_section and (
-                not matched or matched[-1] != current_section
-            ):
+        count = _word_match_count(stripped, words)
+        line_in_active_section = current_section in active_sections
+
+        if count == 0:
+            continue
+
+        # In a matching section → include all matching lines
+        if line_in_active_section:
+            if current_section not in shown_sections:
                 matched.append(current_section)
+                shown_sections.add(current_section)
+            matched.append(stripped)
+            continue
+
+        # Outside matching section → only include if ≥2 words match
+        if count >= 2 or n_words == 1:
             matched.append(stripped)
 
     if not matched:
