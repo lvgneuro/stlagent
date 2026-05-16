@@ -710,8 +710,13 @@ async def ai_handler(message: Message, bot: Bot) -> None:
         username_tg = message.from_user.username if message.from_user else None
         tg_link = f"@{username_tg}" if username_tg else "нет TG username"
 
+        user_facts = await db.get_user_facts(user_id)
+        client_name = user_facts.get("name", "")
         user_interest = await db.get_user_interest(user_id)
-        client_info = f"Телефон: {phone}, TG: {tg_link}"
+        client_info = f"Телефон: {phone}"
+        if client_name:
+            client_info += f", Имя: {client_name}"
+        client_info += f", TG: {tg_link}"
 
         await send_to_group(bot, client_info, user_interest, user_id)
         await db.mark_lead_sent(user_id)
