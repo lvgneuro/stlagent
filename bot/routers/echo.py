@@ -38,6 +38,8 @@ def clean_html(text: str) -> str:
 
 def is_sofa_request(text: str) -> bool:
     text_lower = text.lower()
+    if len(text) > 200:
+        return False
     keywords = [
         "диван",
         "диваны",
@@ -558,7 +560,9 @@ async def ai_handler(message: Message, bot: Bot) -> None:
             for phrase in [
                 "какие",
                 "список",
-                "все",
+                "все диваны",
+                "все модели",
+                "все диван",
                 "перечисли",
                 "покажи список",
                 "какой диван",
