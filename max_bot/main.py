@@ -6,22 +6,20 @@ import sys
 from datetime import datetime, timedelta, timezone
 import os
 
-# Before importing the echo router, we need to make sure that when it imports aiogram,
-# it gets our fake aiogram. We'll do this by inserting the path to our fake_aiogram
-# at the beginning of sys.path and then removing the real aiogram from sys.modules if present.
-# However, note that the real aiogram might be installed in the environment.
-# We'll create a fake package named 'aiogram' in a temporary location and add its parent to sys.path.
-
+# Replace the aiogram module with our fake one before any imports that might use aiogram.
 fake_aiogram_path = os.path.join(os.path.dirname(__file__), 'fake_aiogram')
-# Insert at the beginning so that our fake is found first.
-if fake_aiogram_path not in sys.path:
-    sys.path.insert(0, fake_aiogram_path)
+# Add the parent directory of fake_aiogram to sys.path so that we can import fake_aiogram as a package
+if os.path.dirname(fake_aiogram_path) not in sys.path:
+    sys.path.insert(0, os.path.dirname(fake_aiogram_path))
 
-# Now, if the real aiogram is already loaded, we need to remove it to avoid confusion.
-# But we haven't imported it yet. However, just in case, we can delete the module.
+# Remove any real aiogram modules that might have been loaded.
 modules_to_remove = [mod for mod in sys.modules if mod.startswith('aiogram')]
 for mod in modules_to_remove:
     del sys.modules[mod]
+
+# Now import our fake aiogram and register it as the 'aiogram' module.
+import max_bot.fake_aiogram as fake_aiogram
+sys.modules['aiogram'] = fake_aiogram
 
 from aiohttp import web
 
@@ -37,16 +35,16 @@ from max_bot.database import db
 from max_bot.services.ai_service import get_ai_service
 from max_bot.services.max_client import MaxBot
 
-# Now import the echo router (which will import aiogram from our fake)
+# Now import the echo router (which will import aiogram from our fake, now sys.modules['aiogram'])
 from max_bot.routers import echo
 
-# We need to patch the Bot class in the fake aiogram to use our MaxBot.
+# We need to patch the Bot class in the aiogram module to use our MaxBot.
 # The echo router will create a Bot instance via `Bot(token=BOT_TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))`
 # We want that Bot instance to actually be our MaxBot, but with the same interface.
-# We can do this by monkey-patching the Bot class in the fake aiogram module.
-import max_bot.fake_aiogram.bot as fake_bot_module
+# We can do this by monkey-patching the Bot class in the aiogram module.
+import aiogram.bot as aiogram_bot_module
 
-# Replace the Bot class in the fake module with a subclass that delegates to MaxBot.
+# Replace the Bot class in the aiogram module with a subclass that delegates to MaxBot.
 # However, we need to keep the same constructor signature.
 # We'll create a wrapper class that inherits from the fake Bot (which is just a stub) and then
 # override the methods to call MaxBot.
@@ -54,9 +52,9 @@ import max_bot.fake_aiogram.bot as fake_bot_module
 # We'll make our wrapper such that when Bot(...) is called, it returns an instance of MaxBot
 # but with the same interface as the fake Bot (so that isinstance checks pass?).
 # Actually, the echo router does not do isinstance checks on Bot; it just calls methods.
-# So we can simply replace the Bot class in the fake module with our MaxBot class.
-# However, the Bot class in the fake module is also used for type hints? Not really.
-# Let's do: fake_bot_module.Bot = MaxBot
+# So we can simply replace the Bot class in the aiogram module with our MaxBot class.
+# However, the Bot class in the aiogram module is also used for type hints? Not really.
+# Let's do: aiogram_bot_module.Bot = MaxBot
 # But we need to ensure that MaxBot has the same constructor signature as the fake Bot.
 # The fake Bot's __init__ is: def __init__(self, token: str = None, **kwargs)
 # Our MaxBot's __init__ is: def __init__(self, token: str):
@@ -65,8 +63,8 @@ import max_bot.fake_aiogram.bot as fake_bot_module
 # We'll do that in a moment.
 
 # For now, we'll assume we have adjusted MaxBot.
-# We'll replace the Bot class in the fake module with MaxBot.
-fake_bot_module.Bot = MaxBot
+# We'll replace the Bot class in the aiogram module with MaxBot.
+aiogram_bot_module.Bot = MaxBot
 
 # Also, we need to patch the Dispatcher? The echo router does not use Dispatcher directly;
 # it uses the router and then in main.py we create a Dispatcher and include the router.
@@ -77,7 +75,7 @@ logging.basicConfig(level=logging.INFO, stream=sys.stdout)
 logger = logging.getLogger(__name__)
 
 # We'll use the Dispatcher from our fake aiogram
-from max_bot.fake_aiogram.dispatcher import Dispatcher
+from aiogram.dispatcher import Dispatcher
 
 dp = Dispatcher()
 dp.include_router(echo.router)
@@ -266,11 +264,12 @@ def max_message_to_aiogram(update_data: dict):
         }
     }
     """
-    from max_bot.fake_aiogram.types import Update as AiogramUpdate, Message, User, Chat
+    from aiogram.types import Update as AiogramUpdate, Message, User, Chat
 
-    update_type = update_data.get("update_type")
+    update_type = update_data.get("update_type") or update_data.get("type")  # Handle both
     # Max does not send update_id; we can use timestamp as fallback or set 0.
-    update_id = int(update_data.get("timestamp", 0)) // 1000  # use seconds as pseudo ID
+    timestamp = update_data.get("timestamp", 0)
+    update_id = int(timestamp) // 1000  # use seconds as pseudo ID
 
     # We only handle message_created updates for now.
     if update_type != "message_created":
@@ -279,6 +278,7 @@ def max_message_to_aiogram(update_data: dict):
 
     msg = update_data.get("message", {})
     if not msg:
+        # If no message in payload, return update with no message
         return AiogramUpdate(update_id=update_id, message=None)
 
     # Sender (from_user)
@@ -321,9 +321,9 @@ def max_message_to_aiogram(update_data: dict):
     text = body.get("text", "")
     # Use message id from mid? Not numeric; we can use a hash or timestamp.
     # For simplicity, we can use timestamp as message_id (seconds).
-    message_id = int(update_data.get("timestamp", 0)) // 1000
+    message_id = int(timestamp) // 1000
     # Date in seconds since epoch
-    date = int(update_data.get("timestamp", 0)) // 1000
+    date = int(timestamp) // 1000
 
     # Build Message
     message = Message(
@@ -367,14 +367,14 @@ async def main() -> None:
         try:
             aiogram_update = max_message_to_aiogram(update_data)
         except Exception as e:
-            logger.error(f"Failed to convert Max update: {e}")
-            return web.Response(status=500, text="Update conversion error")
+            logger.error(f"Failed to convert Max update: {e}. Update data: {update_data}")
+            return web.Response(status=200, text="")  # Return 200 to avoid retries
         # Feed to dp
         try:
             await dp.feed_update(bot, aiogram_update)
         except Exception as e:
             logger.error(f"Error while processing update: {e}")
-            return web.Response(status=500, text="Processing error")
+            return web.Response(status=200, text="")  # Return 200 to avoid retries
         return web.Response()
 
     app.router.add_post(WEBHOOK_PATH, handle_request)
