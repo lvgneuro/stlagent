@@ -1,0 +1,680 @@
+from __future__ import annotations
+
+import logging
+import os
+from dataclasses import dataclass
+from datetime import datetime, timedelta
+
+from sqlalchemy import (
+    Column,
+    BigInteger,
+    Integer,
+    String,
+    DateTime,
+    Text,
+    LargeBinary,
+    create_engine,
+    text,
+)
+from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
+from sqlalchemy.orm import DeclarativeBase
+
+logger = logging.getLogger(__name__)
+
+
+class Base(DeclarativeBase):
+    pass
+
+
+class MessageModel(Base):
+    __tablename__ = "messages"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    user_id = Column(BigInteger, nullable=False, index=True)
+    username = Column(String, nullable=True)
+    first_name = Column(String, nullable=True)
+    user_message = Column(Text, nullable=False)
+    bot_response = Column(Text, nullable=False)
+    created_at = Column(DateTime, default=datetime.now)
+
+
+class UserFactModel(Base):
+    __tablename__ = "user_facts"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    user_id = Column(BigInteger, nullable=False, index=True)
+    fact_type = Column(String, nullable=False)
+    fact_value = Column(String, nullable=False)
+    context = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=datetime.now)
+
+
+class UserImageModel(Base):
+    __tablename__ = "user_images"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    user_id = Column(BigInteger, nullable=False, index=True)
+    image_data = Column(LargeBinary, nullable=False)
+    file_id = Column(String, nullable=True)
+    description = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=datetime.now)
+
+
+class SofaModel(Base):
+    __tablename__ = "sofas"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    slug = Column(String, nullable=False, unique=True, index=True)
+    name = Column(String, nullable=False)
+    url = Column(String, nullable=False)
+    category = Column(String, nullable=True)
+    description = Column(Text, nullable=True)
+    features = Column(Text, nullable=True)
+    image_urls = Column(Text, nullable=True)
+    updated_at = Column(DateTime, default=datetime.now)
+
+
+class ConversationModel(Base):
+    __tablename__ = "conversations"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    user_id = Column(BigInteger, nullable=False, index=True)
+    last_message_at = Column(DateTime, default=datetime.now, index=True)
+    reminder_sent_15min = Column(Integer, default=0)
+    reminder_sent_3h = Column(Integer, default=0)
+    reminder_sent_1d = Column(Integer, default=0)
+    last_reminder_at = Column(DateTime, nullable=True)
+    topic = Column(Text, nullable=True)
+    last_bot_message = Column(Text, nullable=True)
+    last_interest = Column(Text, nullable=True)
+    lead_sent_at = Column(DateTime, nullable=True)
+    last_lead_update_at = Column(DateTime, nullable=True)
+    created_at = Column(DateTime, default=datetime.now)
+
+
+@dataclass
+class Message:
+    user_id: int
+    username: str | None
+    first_name: str | None
+    user_message: str
+    bot_response: str
+    created_at: datetime
+
+
+@dataclass
+class UserImage:
+    id: int
+    user_id: int
+    image_data: bytes
+    file_id: str | None
+    description: str | None
+    created_at: datetime
+
+
+@dataclass
+class Sofa:
+    id: int
+    slug: str
+    name: str
+    url: str
+    category: str | None
+    description: str | None
+    features: str | None
+    image_urls: str | None
+    updated_at: datetime
+
+
+@dataclass
+class Conversation:
+    user_id: int
+    topic: str | None
+    last_bot_message: str | None
+    last_message_at: datetime
+    reminder_sent_15min: int
+    reminder_sent_3h: int
+    reminder_sent_1d: int
+
+
+class Database:
+    def __init__(self) -> None:
+        database_url = os.getenv("DATABASE_URL")
+
+        if database_url:
+            if "postgresql://" in database_url:
+                database_url = database_url.replace(
+                    "postgresql://", "postgresql+asyncpg://", 1
+                )
+            elif "postgres://" in database_url:
+                database_url = database_url.replace(
+                    "postgres://", "postgresql+asyncpg://", 1
+                )
+            self._engine = create_async_engine(database_url, echo=False)
+        else:
+            self._engine = create_async_engine(
+                "sqlite+aiosqlite:///messages.db", echo=False
+            )
+
+        self._session_factory = async_sessionmaker(self._engine, expire_on_commit=False)
+
+    def get_sync_engine(self):
+        database_url = os.getenv("DATABASE_URL", "")
+        if database_url.startswith("postgresql+asyncpg://"):
+            database_url = database_url.replace(
+                "postgresql+asyncpg://", "postgresql://", 1
+            )
+        elif database_url.startswith("postgres+asyncpg://"):
+            database_url = database_url.replace(
+                "postgres+asyncpg://", "postgresql://", 1
+            )
+        return create_engine(database_url, echo=False)
+
+    async def init_db(self) -> None:
+        async with self._engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
+            await conn.execute(
+                text("ALTER TABLE messages ALTER COLUMN user_id TYPE BIGINT")
+            )
+            await conn.execute(
+                text("ALTER TABLE user_facts ALTER COLUMN user_id TYPE BIGINT")
+            )
+            await conn.execute(
+                text("ALTER TABLE user_images ALTER COLUMN user_id TYPE BIGINT")
+            )
+            await conn.execute(
+                text("ALTER TABLE conversations ALTER COLUMN user_id TYPE BIGINT")
+            )
+            await conn.execute(
+                text(
+                    "ALTER TABLE conversations ADD COLUMN IF NOT EXISTS last_interest TEXT"
+                )
+            )
+            await conn.execute(
+                text(
+                    "ALTER TABLE conversations ADD COLUMN IF NOT EXISTS lead_sent_at TIMESTAMP"
+                )
+            )
+            await conn.execute(
+                text(
+                    "ALTER TABLE conversations ADD COLUMN IF NOT EXISTS last_lead_update_at TIMESTAMP"
+                )
+            )
+
+    async def save_message(
+        self,
+        user_id: int,
+        username: str | None,
+        first_name: str | None,
+        user_message: str,
+        bot_response: str,
+    ) -> None:
+        async with self._session_factory() as session:
+            msg = MessageModel(
+                user_id=user_id,
+                username=username,
+                first_name=first_name,
+                user_message=user_message,
+                bot_response=bot_response,
+            )
+            session.add(msg)
+            await session.commit()
+            logger.info(f"Saved message from user {user_id}")
+
+    async def get_user_messages(self, user_id: int, limit: int = 50) -> list[Message]:
+        async with self._session_factory() as session:
+            from sqlalchemy import select
+
+            stmt = (
+                select(MessageModel)
+                .where(MessageModel.user_id == user_id)
+                .order_by(MessageModel.created_at.desc())
+                .limit(limit)
+            )
+            result = await session.execute(stmt)
+            rows = result.scalars().all()
+            return [
+                Message(
+                    user_id=int(row.user_id),
+                    username=str(row.username) if row.username else None,
+                    first_name=str(row.first_name) if row.first_name else None,
+                    user_message=str(row.user_message),
+                    bot_response=str(row.bot_response),
+                    created_at=datetime.now()
+                    if row.created_at is None
+                    else row.created_at,
+                )
+                for row in rows
+            ]
+
+    async def get_all_users(self) -> list[int]:
+        async with self._session_factory() as session:
+            from sqlalchemy import select
+
+            stmt = select(MessageModel.user_id).distinct()
+            result = await session.execute(stmt)
+            return list(result.scalars().all())
+
+    async def save_fact(
+        self,
+        user_id: int,
+        fact_type: str,
+        fact_value: str,
+        context: str | None = None,
+    ) -> None:
+        async with self._session_factory() as session:
+            from sqlalchemy import select
+
+            stmt = select(UserFactModel).where(
+                UserFactModel.user_id == user_id,
+                UserFactModel.fact_type == fact_type,
+            )
+            result = await session.execute(stmt)
+            existing = result.scalar_one_or_none()
+            if existing:
+                existing.fact_value = fact_value
+                if context:
+                    existing.context = context
+            else:
+                fact = UserFactModel(
+                    user_id=user_id,
+                    fact_type=fact_type,
+                    fact_value=fact_value,
+                    context=context,
+                )
+                session.add(fact)
+            await session.commit()
+
+    async def get_user_facts(self, user_id: int) -> dict[str, str]:
+        async with self._session_factory() as session:
+            from sqlalchemy import select
+
+            stmt = select(UserFactModel).where(UserFactModel.user_id == user_id)
+            result = await session.execute(stmt)
+            rows = result.scalars().all()
+            return {row.fact_type: row.fact_value for row in rows}
+
+    async def search_context(self, user_id: int, query: str) -> list[str]:
+        async with self._session_factory() as session:
+            from sqlalchemy import select
+
+            stmt = (
+                select(MessageModel)
+                .where(MessageModel.user_id == user_id)
+                .order_by(MessageModel.created_at.desc())
+                .limit(20)
+            )
+            result = await session.execute(stmt)
+            rows = result.scalars().all()
+            results = []
+            query_lower = query.lower()
+            for row in rows:
+                text = f"{row.user_message} {row.bot_response}".lower()
+                if query_lower in text or any(
+                    word in text for word in query_lower.split()[:3]
+                ):
+                    results.append(
+                        f"Вопрос: {row.user_message}\nОтвет: {row.bot_response}"
+                    )
+            return results[-5:]
+
+    async def get_recent_messages(self, limit: int = 50) -> list[dict]:
+        async with self._session_factory() as session:
+            from sqlalchemy import select, desc
+
+            stmt = (
+                select(MessageModel)
+                .order_by(desc(MessageModel.created_at))
+                .limit(limit)
+            )
+            result = await session.execute(stmt)
+            rows = result.scalars().all()
+            return [
+                {
+                    "id": row.id,
+                    "user_id": row.user_id,
+                    "first_name": row.first_name,
+                    "message": row.user_message[:100],
+                    "response": row.bot_response[:150],
+                    "created_at": row.created_at.isoformat()
+                    if row.created_at
+                    else None,
+                }
+                for row in rows
+            ]
+
+    async def save_image(
+        self,
+        user_id: int,
+        image_data: bytes,
+        file_id: str | None = None,
+        description: str | None = None,
+    ) -> int:
+        async with self._session_factory() as session:
+            image = UserImageModel(
+                user_id=user_id,
+                image_data=image_data,
+                file_id=file_id,
+                description=description,
+            )
+            session.add(image)
+            await session.commit()
+            logger.info(f"Saved image for user {user_id}")
+            return image.id
+
+    async def get_user_images(self, user_id: int, limit: int = 20) -> list[UserImage]:
+        async with self._session_factory() as session:
+            from sqlalchemy import select
+
+            stmt = (
+                select(UserImageModel)
+                .where(UserImageModel.user_id == user_id)
+                .order_by(UserImageModel.created_at.desc())
+                .limit(limit)
+            )
+            result = await session.execute(stmt)
+            rows = result.scalars().all()
+            return [
+                UserImage(
+                    id=row.id,
+                    user_id=int(row.user_id),
+                    image_data=row.image_data,
+                    file_id=str(row.file_id) if row.file_id else None,
+                    description=str(row.description) if row.description else None,
+                    created_at=datetime.now()
+                    if row.created_at is None
+                    else row.created_at,
+                )
+                for row in rows
+            ]
+
+    async def get_image_by_id(self, image_id: int, user_id: int) -> UserImage | None:
+        async with self._session_factory() as session:
+            from sqlalchemy import select
+
+            stmt = select(UserImageModel).where(
+                UserImageModel.id == image_id,
+                UserImageModel.user_id == user_id,
+            )
+            result = await session.execute(stmt)
+            row = result.scalar_one_or_none()
+            if row:
+                return UserImage(
+                    id=row.id,
+                    user_id=int(row.user_id),
+                    image_data=row.image_data,
+                    file_id=str(row.file_id) if row.file_id else None,
+                    description=str(row.description) if row.description else None,
+                    created_at=datetime.now()
+                    if row.created_at is None
+                    else row.created_at,
+                )
+            return None
+
+    async def save_sofa(
+        self,
+        slug: str,
+        name: str,
+        url: str,
+        category: str | None = None,
+        description: str | None = None,
+        features: str | None = None,
+        image_urls: str | None = None,
+    ) -> None:
+        async with self._session_factory() as session:
+            from sqlalchemy import select
+
+            stmt = select(SofaModel).where(SofaModel.slug == slug)
+            result = await session.execute(stmt)
+            existing = result.scalar_one_or_none()
+            now = datetime.now()
+            logger.info(f"Saving sofa: slug={slug}, name={name}, url={url[:50]}...")
+            if existing:
+                existing.name = name
+                existing.url = url
+                existing.category = category
+                existing.description = description
+                existing.features = features
+                existing.image_urls = image_urls
+                existing.updated_at = now
+            else:
+                sofa = SofaModel(
+                    slug=slug,
+                    name=name,
+                    url=url,
+                    category=category,
+                    description=description,
+                    features=features,
+                    image_urls=image_urls,
+                    updated_at=now,
+                )
+                session.add(sofa)
+            await session.commit()
+            logger.info(f"Saved sofa: {name}")
+
+    async def search_sofas(self, query: str, limit: int = 10) -> list[Sofa]:
+        logger.info(f"search_sofas called with query: '{query}'")
+        async with self._session_factory() as session:
+            from sqlalchemy import select
+
+            query_clean = query.lower().strip()
+            logger.info(f"Searching for: {query_clean}")
+
+            stmt = (
+                select(SofaModel)
+                .where(
+                    (SofaModel.name.ilike(f"%{query_clean}%"))
+                    | (SofaModel.description.ilike(f"%{query_clean}%"))
+                    | (SofaModel.category.ilike(f"%{query_clean}%"))
+                    | (SofaModel.slug.ilike(f"%{query_clean}%"))
+                )
+                .limit(limit)
+            )
+            result = await session.execute(stmt)
+            rows = result.scalars().all()
+            logger.info(f"Found {len(rows)} rows from DB")
+
+            if not rows:
+                all_sofas = await session.execute(select(SofaModel).limit(5))
+                sample = all_sofas.scalars().all()
+                logger.info(
+                    f"Sample of DB: {[(s.name, s.slug, s.url[:30]) for s in sample]}"
+                )
+
+            return [
+                Sofa(
+                    id=row.id,
+                    slug=row.slug,
+                    name=str(row.name),
+                    url=str(row.url),
+                    category=str(row.category) if row.category else None,
+                    description=str(row.description) if row.description else None,
+                    features=str(row.features) if row.features else None,
+                    image_urls=str(row.image_urls) if row.image_urls else None,
+                    updated_at=datetime.now()
+                    if row.updated_at is None
+                    else row.updated_at,
+                )
+                for row in rows
+            ]
+
+    async def get_all_sofas(self, limit: int = 1000) -> list[Sofa]:
+        async with self._session_factory() as session:
+            from sqlalchemy import select
+
+            stmt = select(SofaModel).order_by(SofaModel.name).limit(limit)
+            result = await session.execute(stmt)
+            rows = result.scalars().all()
+            return [
+                Sofa(
+                    id=row.id,
+                    slug=row.slug,
+                    name=str(row.name),
+                    url=str(row.url),
+                    category=str(row.category) if row.category else None,
+                    description=str(row.description) if row.description else None,
+                    features=str(row.features) if row.features else None,
+                    image_urls=str(row.image_urls) if row.image_urls else None,
+                    updated_at=datetime.now()
+                    if row.updated_at is None
+                    else row.updated_at,
+                )
+                for row in rows
+            ]
+
+    async def get_sofa_count(self) -> int:
+        async with self._session_factory() as session:
+            from sqlalchemy import select, func
+
+            stmt = select(func.count(SofaModel.id))
+            result = await session.execute(stmt)
+            return result.scalar() or 0
+
+    async def touch_conversation(
+        self,
+        user_id: int,
+        topic: str | None = None,
+        last_bot_message: str | None = None,
+        last_interest: str | None = None,
+    ) -> None:
+        async with self._session_factory() as session:
+            from sqlalchemy import select
+
+            stmt = select(ConversationModel).where(ConversationModel.user_id == user_id)
+            result = await session.execute(stmt)
+            conv = result.scalar_one_or_none()
+            if conv:
+                conv.last_message_at = datetime.now()
+                conv.reminder_sent_15min = 0
+                conv.reminder_sent_3h = 0
+                conv.reminder_sent_1d = 0
+                conv.last_reminder_at = None
+                if topic:
+                    conv.topic = topic
+                if last_bot_message:
+                    conv.last_bot_message = last_bot_message
+                if last_interest:
+                    conv.last_interest = last_interest
+            else:
+                conv = ConversationModel(
+                    user_id=user_id,
+                    topic=topic,
+                    last_bot_message=last_bot_message,
+                    last_interest=last_interest,
+                )
+                session.add(conv)
+            await session.commit()
+
+    async def get_pending_reminders(
+        self, intervals: list[str]
+    ) -> list[tuple[int, str, str | None]]:
+        async with self._session_factory() as session:
+            from sqlalchemy import select, and_
+
+            now = datetime.now()
+            results = []
+
+            if "15min" in intervals:
+                delta = timedelta(minutes=15)
+                stmt = select(ConversationModel).where(
+                    and_(
+                        ConversationModel.reminder_sent_15min == 0,
+                        (now - ConversationModel.last_message_at) >= delta,
+                    )
+                )
+                result = await session.execute(stmt)
+                for conv in result.scalars().all():
+                    results.append((conv.user_id, conv.topic, conv.last_bot_message))
+
+            if "3h" in intervals:
+                delta = timedelta(hours=3)
+                stmt = select(ConversationModel).where(
+                    and_(
+                        ConversationModel.reminder_sent_3h == 0,
+                        (now - ConversationModel.last_message_at) >= delta,
+                    )
+                )
+                result = await session.execute(stmt)
+                for conv in result.scalars().all():
+                    results.append((conv.user_id, conv.topic, conv.last_bot_message))
+
+            if "1d" in intervals:
+                delta = timedelta(days=1)
+                stmt = select(ConversationModel).where(
+                    and_(
+                        ConversationModel.reminder_sent_1d == 0,
+                        (now - ConversationModel.last_message_at) >= delta,
+                    )
+                )
+                result = await session.execute(stmt)
+                for conv in result.scalars().all():
+                    results.append((conv.user_id, conv.topic, conv.last_bot_message))
+
+            return results
+
+    async def mark_reminder_sent(self, user_id: int, interval: str) -> None:
+        async with self._session_factory() as session:
+            from sqlalchemy import select
+
+            stmt = select(ConversationModel).where(ConversationModel.user_id == user_id)
+            result = await session.execute(stmt)
+            conv = result.scalar_one_or_none()
+            if conv:
+                if interval == "15min":
+                    conv.reminder_sent_15min = 1
+                elif interval == "3h":
+                    conv.reminder_sent_3h = 1
+                elif interval == "1d":
+                    conv.reminder_sent_1d = 1
+                conv.last_reminder_at = datetime.now()
+                await session.commit()
+
+    async def get_user_interest(self, user_id: int) -> str | None:
+        async with self._session_factory() as session:
+            from sqlalchemy import select
+
+            stmt = select(ConversationModel).where(ConversationModel.user_id == user_id)
+            result = await session.execute(stmt)
+            conv = result.scalar_one_or_none()
+            return conv.last_interest if conv else None
+
+    async def mark_lead_sent(self, user_id: int) -> None:
+        async with self._session_factory() as session:
+            from sqlalchemy import select
+
+            stmt = select(ConversationModel).where(ConversationModel.user_id == user_id)
+            result = await session.execute(stmt)
+            conv = result.scalar_one_or_none()
+            if conv:
+                conv.lead_sent_at = datetime.now()
+                await session.commit()
+
+    async def get_messages_after_lead(
+        self, user_id: int, after_time: datetime
+    ) -> list[Message]:
+        async with self._session_factory() as session:
+            from sqlalchemy import select
+
+            stmt = (
+                select(MessageModel)
+                .where(
+                    MessageModel.user_id == user_id,
+                    MessageModel.created_at > after_time,
+                )
+                .order_by(MessageModel.created_at)
+            )
+            result = await session.execute(stmt)
+            rows = result.scalars().all()
+            return [
+                Message(
+                    user_id=int(row.user_id),
+                    username=str(row.username) if row.username else None,
+                    first_name=str(row.first_name) if row.first_name else None,
+                    user_message=str(row.user_message),
+                    bot_response=str(row.bot_response),
+                    created_at=row.created_at if row.created_at else datetime.now(),
+                )
+                for row in rows
+            ]
+
+
+db = Database()
