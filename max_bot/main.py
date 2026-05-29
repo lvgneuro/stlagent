@@ -255,70 +255,86 @@ async def on_shutdown(bot: MaxBot) -> None:
 def max_message_to_aiogram(update_data: dict):
     """
     Convert a Max webhook payload to an aiogram.types.Update object (from our fake aiogram).
+    Max payload structure:
+    {
+        "update_type": "message_created" | "bot_started" | ...,
+        "timestamp": ms since epoch,
+        "message": {
+            "recipient": {"chat_id": int, "chat_type": "dialog"|"group"|"channel"},
+            "sender": {"user_id": int, "first_name": str, "last_name": str|None, "username": str|None, "is_bot": bool},
+            "body": {"mid": str, "seq": int, "text": str}
+        }
+    }
     """
-    from max_bot.fake_aiogram.types import Update as AiogramUpdate, Message, User, Chat, Contact, PhotoSize
+    from max_bot.fake_aiogram.types import Update as AiogramUpdate, Message, User, Chat
 
     update_type = update_data.get("update_type")
-    update_id = update_data.get("update_id", 0)
+    # Max does not send update_id; we can use timestamp as fallback or set 0.
+    update_id = int(update_data.get("timestamp", 0)) // 1000  # use seconds as pseudo ID
 
-    # We only handle message updates for now.
-    if update_type != "message":
+    # We only handle message_created updates for now.
+    if update_type != "message_created":
+        # For other types (bot_started, etc.) we return an Update with no message.
         return AiogramUpdate(update_id=update_id, message=None)
 
     msg = update_data.get("message", {})
-    # User
-    from_user_data = msg.get("from", {})
+    if not msg:
+        return AiogramUpdate(update_id=update_id, message=None)
+
+    # Sender (from_user)
+    sender = msg.get("sender", {})
     from_user = User(
-        id=from_user_data.get("id", 0),
-        is_bot=from_user_data.get("is_bot", False),
-        first_name=from_user_data.get("first_name"),
-        last_name=from_user_data.get("last_name"),
-        username=from_user_data.get("username"),
-        language_code=from_user_data.get("language_code"),
+        id=sender.get("user_id", 0),
+        is_bot=sender.get("is_bot", False),
+        first_name=sender.get("first_name"),
+        last_name=sender.get("last_name"),
+        username=sender.get("username"),
+        language_code=None,  # Max does not provide language_code
     )
-    # Chat
-    chat_data = msg.get("chat", {})
+
+    # Recipient (chat)
+    recipient = msg.get("recipient", {})
+    chat_id = recipient.get("chat_id", 0)
+    chat_type = recipient.get("chat_type", "private")  # dialog -> private, group -> group, channel -> channel
+    # Map Max chat_type to aiogram Chat.type
+    # aiogram expects: private, group, supergroup, channel
+    if chat_type == "dialog":
+        chat_type_ai = "private"
+    elif chat_type == "group":
+        chat_type_ai = "group"
+    elif chat_type == "channel":
+        chat_type_ai = "channel"
+    else:
+        chat_type_ai = "private"
+
     chat = Chat(
-        id=chat_data.get("id", 0),
-        type=chat_data.get("type", "private"),
-        title=chat_data.get("title"),
-        username=chat_data.get("username"),
-        first_name=chat_data.get("first_name"),
-        last_name=chat_data.get("last_name"),
+        id=chat_id,
+        type=chat_type_ai,
+        title=None,  # Max does not provide title in recipient
+        username=None,
+        first_name=None,
+        last_name=None,
     )
-    # Contact
-    contact_data = msg.get("contact")
-    contact = None
-    if contact_data:
-        contact = Contact(
-            phone_number=contact_data.get("phone_number", ""),
-            first_name=contact_data.get("first_name"),
-            last_name=contact_data.get("last_name"),
-            user_id=contact_data.get("user_id"),
-            vcard=contact_data.get("vcard"),
-        )
-    # Photo
-    photo_data = msg.get("photo", [])
-    photo = []
-    for p in photo_data:
-        photo.append(
-            PhotoSize(
-                file_id=p.get("file_id", ""),
-                width=p.get("width", 0),
-                height=p.get("height", 0),
-                file_size=p.get("file_size"),
-            )
-        )
+
+    # Message body
+    body = msg.get("body", {})
+    text = body.get("text", "")
+    # Use message id from mid? Not numeric; we can use a hash or timestamp.
+    # For simplicity, we can use timestamp as message_id (seconds).
+    message_id = int(update_data.get("timestamp", 0)) // 1000
+    # Date in seconds since epoch
+    date = int(update_data.get("timestamp", 0)) // 1000
+
     # Build Message
     message = Message(
-        message_id=msg.get("message_id", 0),
-        date=msg.get("date", 0),
+        message_id=message_id,
+        date=date,
         chat=chat,
         from_user=from_user,
-        text=msg.get("text"),
-        caption=msg.get("caption"),
-        contact=contact,
-        photo=photo if photo else None,
+        text=text if text else None,
+        caption=None,
+        contact=None,
+        photo=None,
     )
     return AiogramUpdate(update_id=update_id, message=message)
 
