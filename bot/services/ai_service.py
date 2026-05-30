@@ -103,7 +103,8 @@ SYSTEM_PROMPT = """Ты — консультант салона мягкой м�
 
 2. Клиент спрашивает о кровати:
     - Предложи кровать + матрас в размер (комплект). Рекомендуем брать вместе — это обеспечивает идеальное сочетание основания и матраса.
-    - Покажи подходящие модели из каталога LineaFlex.
+    - Покажи подходящие модели из каталога — учитывай все бренды: КАЛИНКА, Oprime, Andrea, LineaFlex. Если клиент не указал бренд — покажи варианты из разных ценовых сегментов.
+    - Для бюджетных запросов предлагай LineaFlex, для премиальных — КАЛИНКА, Oprime, Andrea.
 
 3. Клиент спрашивает о диване:
    - Покажи диван с характеристиками.
@@ -171,13 +172,17 @@ SYSTEM_PROMPT = """Ты — консультант салона мягкой м�
 НИКОГДА не говори "ссылки нет", "не могу показать", "нет в базе" — эти ссылки ВСЕГДА есть!
 
 САЛОНЫ С КРОВАТЯМИ И МАТРАСАМИ:
-- LineaFlex
+- КАЛИНКА — кровати: Вега, Лира, Латона, Лига, Мира, Эльбрус. Сайт: https://mebel-kalinka.ru/
+- Oprime — кровати: Вега, Уно, Тулип, Степ, Сноб. Сайт: https://oprime.ru/
+- Andrea — кровати: Бельдомо, Империя, Лили, Тео. Сайт: https://andrea-mebel.ru/
+- LineaFlex — широкий выбор кроватей и матрасов. Сайт: https://lineaflexshop.ru/
+- Rivalli — кровати (уточняйте в салоне). Сайт: https://rivalli.ru/catalog/divany/
 
 АДРЕСА САЛОНОВ:
 
 ТК "ОРИОН", г.Тюмень, ул.Федюнинского, 43
 Телефон: +79224814654
-Здесь представлены: КАЛИНКА, Oprime, Rivalli, Andrea (диваны, кровати) и LineaFlex (матрасы)
+Здесь представлены: КАЛИНКА, Oprime, Rivalli, Andrea (диваны, кровати), LineaFlex (матрасы), Frendom (диваны, кресла), Homelike18 (диваны)
 
 ТЦ "Новый Магнат", г.Тюмень, ул. 30 лет Победы, 7 стр.5, 2 этаж
 Телефон: +79323215498
@@ -187,10 +192,36 @@ SYSTEM_PROMPT = """Ты — консультант салона мягкой м�
 - НЕ используй поиск для ответов о мебели в Тюмени
 - НЕ рекомендуй ТЦ "Орион" как "Орион" - только ТК "ОРИОН"
 - НЕ рекомендуй другие торговые центры Тюмени (Мебельград, Любимый Дом и т.д.)
-- НЕ рекомендуй другие салоны или бренды (Divan Boss, Мебельград и т.д.)
-- НЕ рекомендуй кровати в салонах КАЛИНКА, Oprime, Rivalli, Andrea
+- НЕ рекомендуй другие салоны или бренды (Divan Boss, Мебельград, 100 диванов и т.д.)
+- Frendom и Homelike18 — НЕ конкуренты, а ПАРТНЁРЫ. Их модели есть в каталоге ниже, рекомендуй их клиентам.
 - НЕ рекомендуй диваны в салоне LineaFlex
 - НЕ выдумывай названия матрасов — только из каталога выше
+- НЕ выдумывай модели диванов или кроватей — используй только те, что есть в каталоге ниже
+
+--- КАТАЛОГ МОДЕЛЕЙ ПО ФАБРИКАМ ---
+
+Категорически нельзя путать: каждая модель ДОЛЖНА быть привязана ТОЛЬКО к своей фабрике.
+
+КАЛИНКА (диваны): К25, К26, К28, К29, К30, К31, К72, Grand Sofa, Lario, Soft Dream, Домус, Оскар
+КАЛИНКА (кровати): Вега, Лира, Латона, Лига, Мира, Эльбрус
+
+Oprime (диваны): Симпл 1-4, Тэйлор, Сноф, Портер, Каро
+Oprime (кровати): Вега, Уно, Тулип, Степ, Сноб
+
+Rivalli (диваны): Амстердам, Турин, Бильбао, Аруба, Даллас, Фарадей, Каролина, Уолтер, Блэквуд, Дискавери, Леннокс, Орлеан, Ключ-Вест, Порто, Дижон, Дублин
+
+Andrea (диваны): Алессандро, Луиджи, Монако, Кампус, Дэлтон, Коузи, Даллас, Милан, Палермо, Неаполь, Марко, Дюна, Остерманн, Обливион, Руан, Ноубл, Бельдомо, Эклипс, Нави
+Andrea (кровати): Бельдомо, Империя, Лили, Тео
+
+Homelike18 (диваны): Бёрн, Жан, Бостон, Томас, Леонардо, Бриг, Париж, Дива, Терри, Арно, Гранд, Мадрид, Фабио, Ройс, Остин, Франко
+
+Frendom (диваны): ВИТО, ГАРДА, ИНКО БЭЙС, КЛИФФ, ЛЕЙТОН, НОРМАН, АЙЗОН, МАКАО, СЭММИ, КУБО, ЛОККИ, ШЭГГИ, ФЛЭТ, ГЕРД
+
+LineaFlex (кровати, матрасы): Вега, Лира, Латона, Лига, Мира, Эльбрус и другие — полный каталог в салоне
+
+Матрасы LineaFlex (все серии): Эконом, Grigio, Популярный, Анатомический, Эргономический, Рациональный, Champions League, Премиум, Sensorica, FormaFlex, Di Arte, Детские
+
+--- КОНЕЦ КАТАЛОГА МОДЕЛЕЙ ---
 
 --- ЦЕНОВЫЕ СЕГМЕНТЫ ФАБРИК ---
 
@@ -203,6 +234,8 @@ SYSTEM_PROMPT = """Ты — консультант салона мягкой м�
 
 СРЕДНИЙ / СРЕДНИЙ+ (средний чек 60–100 тыс. руб.):
 - RIVALLI — оптимальное соотношение цена/качество, широкий модельный ряд
+- Homelike18 — диваны от производителя (Ижевск), каркас сосна+фанера, широкий выбор механизмов
+- Frendom — диваны и кресла (г. Энгельс), скидка 40% на все модели
 - LineaFlex — кровати и матрасы
 
 ПРАВИЛО: когда клиент спрашивает про «недорогие» или «до N тыс.» — сначала покажи флагман из среднего сегмента (RIVALLI), затем ненавязчиво предложи посмотреть премиум. НЕ отказывайся от дорогих моделей — направляй разговор вверх по чеку.
@@ -523,28 +556,115 @@ class AIService:
             "oprime": "https://oprime.ru/",
             "ривалли": "https://rivalli.ru/catalog/divany/",
             "rivalli": "https://rivalli.ru/catalog/divany/",
+            "андреа": "https://andrea-mebel.ru/",
+            "andrea": "https://andrea-mebel.ru/",
+            "homelike18": "https://homelike18.ru/catalog/divany/",
+            "frendom": "https://frendom.ru/",
+            "lineaflex": "https://lineaflexshop.ru/",
         }
         # Model to factory mapping
         model_to_factory = {
+            # OPRIME
             "каро": "опрайм",
             "симпл": "опрайм",
             "тейлор": "опрайм",
             "сноф": "опрайм",
             "мэттью": "опрайм",
             "флай": "опрайм",
+            "портер": "опрайм",
+            "вега": "опрайм",
+            "уно": "опрайм",
+            "тулип": "опрайм",
+            "сноб": "опрайм",
+            "степ": "опрайм",
+            # КАЛИНКА
             "к21": "калинка",
             "к25": "калинка",
             "к26": "калинка",
+            "к28": "калинка",
+            "к29": "калинка",
+            "к30": "калинка",
+            "к31": "калинка",
             "к72": "калинка",
             "grand": "калинка",
             "lario": "калинка",
             "оскар": "калинка",
             "домус": "калинка",
             "domus": "калинка",
-            "маскот": "ривалли",
-            "mascot": "ривалли",
+            "soft dream": "калинка",
             "калинка-21": "калинка",
             "калинка 21": "калинка",
+            # RIVALLI
+            "амстердам": "ривалли",
+            "турин": "ривалли",
+            "бильбао": "ривалли",
+            "аруба": "ривалли",
+            "даллас": "ривалли",
+            "фарадей": "ривалли",
+            "каролина": "ривалли",
+            "уолтер": "ривалли",
+            "блэквуд": "ривалли",
+            "дискавери": "ривалли",
+            "леннокс": "ривалли",
+            "ключ-вест": "ривалли",
+            "орлеан": "ривалли",
+            "порто": "ривалли",
+            "дижон": "ривалли",
+            "дублин": "ривалли",
+            "маскот": "ривалли",
+            "mascot": "ривалли",
+            # ANDREA
+            "алессандро": "андреа",
+            "луиджи": "андреа",
+            "монако": "андреа",
+            "кампус": "андреа",
+            "дэлтон": "андреа",
+            "коузи": "андреа",
+            "милан": "андреа",
+            "палермо": "андреа",
+            "неаполь": "андреа",
+            "марко": "андреа",
+            "дюна": "андреа",
+            "остерманн": "андреа",
+            "обливион": "андреа",
+            "руан": "андреа",
+            "ноубл": "андреа",
+            "бельдомо": "андреа",
+            "эклипс": "андреа",
+            "нави": "андреа",
+            # HOMELIKE18
+            "бёрн": "homelike18",
+            "берн": "homelike18",
+            "жан": "homelike18",
+            "бостон": "homelike18",
+            "томас": "homelike18",
+            "леонардо": "homelike18",
+            "бриг": "homelike18",
+            "париж": "homelike18",
+            "дива": "homelike18",
+            "терри": "homelike18",
+            "арно": "homelike18",
+            "гранд": "homelike18",
+            "мадрид": "homelike18",
+            "фабио": "homelike18",
+            "ройс": "homelike18",
+            "остин": "homelike18",
+            "франко": "homelike18",
+            # FRENDOM
+            "вито": "frendom",
+            "гарда": "frendom",
+            "инко": "frendom",
+            "клифф": "frendom",
+            "лейтон": "frendom",
+            "норман": "frendom",
+            "айзон": "frendom",
+            "макао": "frendom",
+            "сэмми": "frendom",
+            "кубо": "frendom",
+            "локки": "frendom",
+            "шэгги": "frendom",
+            "флэт": "frendom",
+            "герд": "frendom",
         }
 
         if any(kw in user_lower for kw in link_keywords):
@@ -552,29 +672,41 @@ class AIService:
             for factory, link in factory_links.items():
                 if factory in user_lower:
                     return f"Ссылка на сайт {factory.upper()}: {link}"
-            # Check model names from parsed catalog
+            # Determine which model the user is asking about
+            asked_model = None
+            asked_factory = None
+            for model, factory in model_to_factory.items():
+                if model in user_lower:
+                    asked_model = model
+                    asked_factory = factory
+                    break
+            # Search for URL in cache for this model
+            if asked_model:
+                for cached_model, url in model_url_cache.items():
+                    if asked_model in cached_model:
+                        return f"Ссылка на модель: {url}"
+                # Not in cache — return factory link
+                factory_name = asked_factory.lower()
+                if factory_name == "калинка":
+                    return "Сайт КАЛИНКА: https://mebel-kalinka.ru/"
+                if factory_name in ("опрайм", "oprime"):
+                    return "Сайт Oprime: https://oprime.ru/"
+                if factory_name in ("ривалли", "rivalli"):
+                    return "Сайт Rivalli: https://rivalli.ru/catalog/divany/"
+                if factory_name in ("андреа", "andrea"):
+                    return "Сайт Andrea: https://andrea-mebel.ru/"
+                if factory_name == "homelike18":
+                    return "Сайт Homelike18: https://homelike18.ru/catalog/divany/"
+                if factory_name == "frendom":
+                    return "Сайт Frendom: https://frendom.ru/"
+            # No model matched — check model_url_cache directly
             for model_name, url in model_url_cache.items():
                 if model_name in user_lower:
                     return f"Ссылка на модель: {url}"
-            # Check model_url_cache for fallback
-            for model, factory in model_to_factory.items():
-                if model in user_lower:
-                    # Check if we have direct URL in cache
-                    for cached_model, url in model_url_cache.items():
-                        if model in cached_model:
-                            return f"Ссылка на модель: {url}"
-            # Direct fallback for known KALINKA models
-            known_kalinka = {
-                "калинка-21": "https://mebel-kalinka.ru/katalog/item/kalinka_21_1/",
-                "калинка 21": "https://mebel-kalinka.ru/katalog/item/kalinka_21_1/",
-                "к21": "https://mebel-kalinka.ru/katalog/item/kalinka_21_1/",
-            }
-            for name, url in known_kalinka.items():
-                if name in user_lower:
-                    return f"Ссылка на модель: {url}"
-            # Last resort - give factory link for калинка
-            if "калинка" in user_lower:
-                return "Ссылка на сайт КАЛИНКА: https://mebel-kalinka.ru/"
+            # Last resort — direct factory name check in user message
+            for factory, link in factory_links.items():
+                if factory in user_lower:
+                    return f"Ссылка на сайт {factory.upper()}: {link}"
 
         messages.append({"role": "user", "content": user_message})
 
