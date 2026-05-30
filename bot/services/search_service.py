@@ -68,7 +68,6 @@ class SearchService:
             for r in results:
                 title = r.get("title", "")
                 body = r.get("body", "")
-                href = r.get("href", "")
                 if not title or not body:
                     continue
                 summary.append(f"- {title}: {body[:300]}")
@@ -228,11 +227,6 @@ class SearchService:
 
     def _horoscope_api(self, sign: str = "") -> str:
         try:
-            sign_map = {
-                "овен": 1, "телец": 2, "близнецы": 3, "рак": 4,
-                "лев": 5, "дева": 6, "весы": 7, "скорпион": 8,
-                "стрелец": 9, "козерог": 10, "водолей": 11, "рыбы": 12,
-            }
             sign_variants = {
                 "овен": 1, "овна": 1, "овну": 1,
                 "телец": 2, "тельца": 2, "тельцу": 2,

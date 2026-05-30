@@ -1,9 +1,7 @@
+# ruff: noqa: E402
 from __future__ import annotations
 
-import asyncio
-import logging
 import sys
-from datetime import datetime, timedelta, timezone
 import os
 
 # --- Replace aiogram with our fake ---
@@ -23,6 +21,10 @@ import fake_aiogram
 # Replace the aiogram module with our fake
 sys.modules['aiogram'] = fake_aiogram
 # --- End replacement ---
+
+import asyncio
+import logging
+from datetime import datetime, timedelta, timezone
 
 from aiohttp import web
 
@@ -59,6 +61,9 @@ aiogram_bot_module.Bot = MaxBot
 # We'll use the Dispatcher from our fake aiogram (now accessible as aiogram.dispatcher)
 from aiogram.dispatcher import Dispatcher
 
+logging.basicConfig(level=logging.INFO, stream=sys.stdout)
+logger = logging.getLogger(__name__)
+
 dp = Dispatcher()
 dp.include_router(echo.router)
 
@@ -94,7 +99,10 @@ async def _run_indexing(bot: MaxBot) -> None:
 
         admin_id = 1696951195  # Keep same admin ID; adjust if needed for Max
         try:
-            await bot.send_message(admin_id, f"✅ Ежедневная индексация диванов завершена. Всего в базе: {count}")
+            await bot.send_message(
+                admin_id,
+                f"✅ Ежедневная индексация диванов завершена. Всего в базе: {count}",
+            )
         except Exception:
             pass
 
@@ -246,21 +254,30 @@ def max_message_to_aiogram(update_data: dict):
         }
     }
     """
+    # Import OUR types from the fake aiogram module
     from aiogram.types import Update as AiogramUpdate, Message, User, Chat
+
+    # Debug: Log what we're importing
+    logger.debug(f"AiogramUpdate class: {AiogramUpdate}")
+    logger.debug(f"AiogramUpdate module: {AiogramUpdate.__module__}")
 
     update_type = update_data.get("update_type") or update_data.get("type")  # Handle both
     # Max does not send update_id; we can use timestamp as fallback or set 0.
     timestamp = update_data.get("timestamp", 0)
+    logger.debug(f"Timestamp from update_data: {timestamp} (type: {type(timestamp)})")
     update_id = int(timestamp) // 1000  # use seconds as pseudo ID
+    logger.debug(f"Calculated update_id: {update_id} (type: {type(update_id)})")
 
     # We only handle message_created updates for now.
     if update_type != "message_created":
         # For other types (bot_started, etc.) we return an Update with no message.
+        logger.debug(f"Non-message_created update type: {update_type}, returning Update with no message")
         return AiogramUpdate(update_id=update_id, message=None)
 
     msg = update_data.get("message", {})
     if not msg:
         # If no message in payload, return update with no message
+        logger.debug("No message in payload, returning Update with no message")
         return AiogramUpdate(update_id=update_id, message=None)
 
     # Sender (from_user)
@@ -307,6 +324,10 @@ def max_message_to_aiogram(update_data: dict):
     # Date in seconds since epoch
     date = int(timestamp) // 1000
 
+    logger.debug(f"Calculated message_id: {message_id}, date: {date}")
+    logger.debug(f"Chat id: {chat_id}, type: {chat_type_ai}")
+    logger.debug(f"From user id: {from_user.id}")
+
     # Build Message
     message = Message(
         message_id=message_id,
@@ -318,7 +339,24 @@ def max_message_to_aiogram(update_data: dict):
         contact=None,
         photo=None,
     )
-    return AiogramUpdate(update_id=update_id, message=message)
+    
+    # Debug: Log the values we're about to use
+    logger.debug(f"About to create Update with: update_id={update_id}, message={message}")
+    
+    # Create and return the Update
+    try:
+        result = AiogramUpdate(update_id=update_id, message=message)
+        logger.debug(f"Successfully created Update: {result}")
+        return result
+    except Exception as e:
+        logger.error(f"Failed to create Update object: {e}")
+        logger.error(f"update_id value: {update_id} (type: {type(update_id)})")
+        logger.error(f"message value: {message}")
+        if message:
+            logger.error(f"message.message_id: {message.message_id} (type: {type(message.message_id)})")
+            logger.error(f"message.date: {message.date} (type: {type(message.date)})")
+            logger.error(f"message.chat: {message.chat} (type: {type(message.chat)})")
+        raise
 
 
 async def main() -> None:
@@ -358,6 +396,11 @@ async def main() -> None:
             await dp.feed_update(bot, aiogram_update)
         except Exception as e:
             logger.error(f"Error while processing update: {e}")
+            # Log the actual update object that caused the error
+            logger.error(f"Failing update object: {aiogram_update}")
+            if hasattr(aiogram_update, 'message') and aiogram_update.message:
+                logger.error(f"Failing message: {aiogram_update.message}")
+                logger.error(f"Failing message.chat: {aiogram_update.message.chat}")
             return web.Response(status=200, text="")  # Return 200 to avoid retries
         return web.Response()
 

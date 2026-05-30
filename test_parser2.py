@@ -1,6 +1,4 @@
 import asyncio
-import re
-import aiohttp
 from bot.services.rivalli_parser import RivalliParser
 
 

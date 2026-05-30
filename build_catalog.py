@@ -132,11 +132,6 @@ def extract_short_info(txt_path: Path) -> str:
 
 
 def main():
-    base = Path("E:/ТГ-агент")
-
-    kalinka = base / "Калинка МФ"
-    opraim = base / "Опрайм"
-
     full_catalog = KALINKA_SOFAQAS + "\n\n" + ANDREA_CATALOG
 
     output = Path("E:/ТГ-агент/furniture_catalog.txt")

@@ -8,7 +8,6 @@ from aiogram.filters import CommandStart, Command
 from aiogram.types import Message
 from aiogram.types import FSInputFile
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
-from aiogram import html
 from pathlib import Path
 import tempfile
 
@@ -111,7 +110,6 @@ def is_sofa_request(text: str) -> bool:
 async def command_start_handler(message: Message) -> None:
     user_id = message.from_user.id if message.from_user else 0
     logger.info(f"Получен /start от {user_id}")
-    name = message.from_user.full_name if message.from_user else " stranger"
     await message.answer("Интеллектуальный помощник по подбору мягкой мебели готов немедленно прийти к Вам на помощь!")
 
 

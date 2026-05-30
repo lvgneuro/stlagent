@@ -1,7 +1,6 @@
 from __future__ import annotations
 
-import re
-from typing import Any, Callable
+from typing import Any
 
 class CommandStart:
     def __init__(self, ignore_case: bool = False, ignore_prefix: bool = False):
@@ -16,17 +15,18 @@ class CommandStart:
         return text.startswith(prefix + "start")
 
 class Command:
-    def __init__(self, *commands, ignore_case: bool = False, ignore_prefix: bool = False):
+    def __init__(self, *commands, ignore_case: bool = False, ignore_prefix: bool = False, prefix: str = '/'):
         self.commands = set(commands)
         self.ignore_case = ignore_case
         self.ignore_prefix = ignore_prefix
+        self.prefix = prefix
 
     async def __call__(self, message) -> bool:
         text = message.text or ""
         if self.ignore_case:
             text = text.lower()
-        if not self.ignore_prefix and text.startswith('/'):
-            text = text[1:]
+        if not self.ignore_prefix and text.startswith(self.prefix):
+            text = text[len(self.prefix):]
         # take first word
         cmd = text.split()[0] if text else ""
         return cmd in self.commands

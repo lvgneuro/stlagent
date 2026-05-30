@@ -1,7 +1,6 @@
 import logging
-from typing import Optional, Dict, Any, List
+from typing import Optional, Dict, Any
 import httpx
-from pathlib import Path
 
 logger = logging.getLogger(__name__)
 

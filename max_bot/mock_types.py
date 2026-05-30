@@ -45,7 +45,7 @@ class MockMessage:
 class MockUpdate:
     def __init__(self, update_dict: dict):
         self.update_id = update_dict.get('update_id')
-        self.message = MockMessage(message_dict.get('message')) if message_dict.get('message') else None
+        self.message = MockMessage(update_dict.get('message')) if update_dict.get('message') else None
         # We can add other update types (edited_message, channel_post, etc.) if needed
         # For now, we only handle regular messages.
 
