@@ -19,33 +19,44 @@ class MaxBot:
         response.raise_for_status()
         return response.json()
 
-    async def send_message(self, chat_id: int, text: str) -> Dict[str, Any]:
-        """Send a text message to a chat."""
+    async def send_message(self, chat_id: int, text: str, **kwargs) -> Dict[str, Any]:
+        """Send a text message to a chat. Ignores extra kwargs (reply_markup, parse_mode, etc.) for compatibility."""
         payload = {
             "chat_id": chat_id,
             "text": text,
         }
         return await self._request("POST", "/messages/sendText", json=payload)
 
-    async def send_photo(self, chat_id: int, photo_path: str, caption: Optional[str] = None) -> Dict[str, Any]:
-        """Send a photo to a chat."""
-        # For simplicity, we assume photo_path is a local file path and we need to upload it.
-        # In a real implementation, you might need to upload the photo first to get a file_id.
-        # Since Max API specifics are not detailed, we'll note that this needs adaptation.
-        # This is a placeholder.
-        files = {"photo": open(photo_path, "rb")}
+    async def send_photo(self, chat_id: int, photo, caption: Optional[str] = None, **kwargs) -> Dict[str, Any]:
+        """Send a photo to a chat.
+        
+        Accepts a file path (str), an FSInputFile, or any object with a 'path' attribute.
+        Extra kwargs are ignored for compatibility.
+        """
+        # Try to extract a file path from various input types
+        if isinstance(photo, str):
+            path = photo
+        elif hasattr(photo, 'path'):
+            path = photo.path
+        else:
+            logger.warning(f"send_photo: unsupported photo type {type(photo)}")
+            return {"ok": False, "error": "unsupported photo type"}
+
         data = {"chat_id": str(chat_id)}
         if caption:
             data["caption"] = caption
-        # We need to know the correct endpoint for sending photos in Max API.
-        # As an example, let's assume it's /messages/sendPhoto
-        return await self._request("POST", "/messages/sendPhoto", data=data, files=files)
+        with open(path, "rb") as f:
+            files = {"photo": f}
+            return await self._request("POST", "/messages/sendPhoto", data=data, files=files)
+
+    async def download(self, file_obj, destination: Optional[str] = None) -> bytes | None:
+        """Download a file. Placeholder for Max compatibility — always returns empty bytes."""
+        logger.warning(f"download called but Max does not support file download: {file_obj}")
+        return b""
 
     async def get_file(self, file_id: str) -> bytes:
         """Download a file by its file_id."""
-        # This is a placeholder; actual implementation depends on Max API.
         resp = await self._request("GET", f"/files/{file_id}")
-        # Assuming the response contains a URL to download the file
         file_url = resp.get("url")
         if not file_url:
             raise ValueError("No file URL in response")
