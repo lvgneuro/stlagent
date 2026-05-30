@@ -8,6 +8,28 @@ import httpx
 logger = logging.getLogger(__name__)
 
 
+class MaxMessage:
+    """Fake aiogram Message-like object returned by MaxBot."""
+    def __init__(self, data: dict[str, Any], chat_id: int = 0):
+        self.data = data
+        self.chat = Chat(id=chat_id, type="private")
+        self.message_id = data.get("message_id", 0)
+        self.from_user = None
+
+    async def delete(self) -> dict[str, Any]:
+        return {"ok": True}
+
+    async def edit_text(self, text: str, **kwargs) -> "MaxMessage":
+        return self
+
+
+class Chat:
+    """Minimal chat stub for MaxMessage."""
+    def __init__(self, id: int, type: str = "private"):
+        self.id = id
+        self.type = type
+
+
 class MaxBot:
     def __init__(self, token: str, **kwargs):
         self.token = token
@@ -20,13 +42,16 @@ class MaxBot:
         """Handle aiogram TelegramMethod calls (e.g. from message.answer())."""
         method_name = type(method).__name__
         if method_name == "SendMessage":
-            return await self.send_message(method.chat_id, method.text)
+            result = await self.send_message(method.chat_id, method.text)
+            return MaxMessage(result, chat_id=method.chat_id)
         if method_name == "SendPhoto":
-            return await self.send_photo(method.chat_id, method.photo, caption=getattr(method, "caption", None))
+            result = await self.send_photo(method.chat_id, method.photo, caption=getattr(method, "caption", None))
+            return MaxMessage(result, chat_id=method.chat_id)
         if method_name == "DeleteMessage":
             return {"ok": True}
         if method_name == "CopyMessage":
-            return await self.send_message(method.chat_id, getattr(method, "caption", "") or "")
+            result = await self.send_message(method.chat_id, getattr(method, "caption", "") or "")
+            return MaxMessage(result, chat_id=method.chat_id)
         logger.warning(f"MaxBot.__call__: unsupported method {method_name}")
         return {"ok": False, "error": f"unsupported method {method_name}"}
 

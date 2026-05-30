@@ -255,6 +255,10 @@ async def _process_max_update(dp: Dispatcher, max_bot, data: dict) -> None:
     """Convert Max payload and feed to dispatcher."""
     from bot.services.converter import max_to_telegram_dict
 
+    # Debug: log the raw webhook payload
+    import json
+    logger.info(f"Max webhook payload: {json.dumps(data, ensure_ascii=False)[:500]}")
+
     try:
         update_dict = max_to_telegram_dict(data)
         update = Update.model_validate(update_dict)
