@@ -14,21 +14,28 @@ logger = logging.getLogger(__name__)
 
 
 class SearchService:
-
     STOP_LIST = [
-        "askona", "аскона",
-        "moon", "моон",
-        "ormatek", "орматек",
-        "arti mobili", "арти мобили",
-        "pushe", "пуше",
-        "erga", "эрга", "эргомебель",
+        "askona",
+        "аскона",
+        "moon",
+        "моон",
+        "ormatek",
+        "орматек",
+        "arti mobili",
+        "арти мобили",
+        "pushe",
+        "пуше",
+        "erga",
+        "эрга",
+        "эргомебель",
         "8 марта",
         "братьев баженовых",
         "пинскдрев",
         "100 диванов",
         "мебельград",
         "33 комода",
-        "диваны.ру", "диваны ру",
+        "диваны.ру",
+        "диваны ру",
     ]
 
     def __init__(self) -> None:
@@ -101,25 +108,108 @@ class SearchService:
     @staticmethod
     def _clean_query(raw: str) -> str:
         stop_words = {
-            "дашь", "дай", "дайте", "знаешь", "знаете", "расскажи", "расскажите",
-            "пожалуйста", "наконец", "есть", "можешь", "можете", "хочешь",
-            "скажи", "найди", "покажи", "покажите", "ищу", "ищете",
-            "нужен", "нужна", "нужно", "нужны", "подскажи", "может",
-            "где", "когда", "как", "что", "зачем", "почему",
-            "тебя", "меня", "мне", "тебе", "себя", "себе",
-            "там", "тут", "здесь", "сейчас", "сегодня", "вчера", "завтра",
-            "так", "сделать", "сделал", "сделали", "сделай", "сделаю",
-            "делать", "делаю", "делаешь", "делаем", "делаете",
-            "просто", "вообще", "ладно", "хорошо", "конечно",
-            "ну", "ой", "ах", "эх", "вот", "это", "этот",
-            "деплой", "деплоя", "деплою",
-            "на", "от", "до", "про", "для", "без", "через",
-            "мой", "моя", "моё", "мои", "моего", "моей", "моему",
-            "твой", "твоя", "твоё", "твои",
-            "ваш", "ваша", "ваше", "ваши",
-            "же", "ж", "ли", "бы", "ведь", "даже", "уже",
+            "дашь",
+            "дай",
+            "дайте",
+            "знаешь",
+            "знаете",
+            "расскажи",
+            "расскажите",
+            "пожалуйста",
+            "наконец",
+            "есть",
+            "можешь",
+            "можете",
+            "хочешь",
+            "скажи",
+            "найди",
+            "покажи",
+            "покажите",
+            "ищу",
+            "ищете",
+            "нужен",
+            "нужна",
+            "нужно",
+            "нужны",
+            "подскажи",
+            "может",
+            "где",
+            "когда",
+            "как",
+            "что",
+            "зачем",
+            "почему",
+            "тебя",
+            "меня",
+            "мне",
+            "тебе",
+            "себя",
+            "себе",
+            "там",
+            "тут",
+            "здесь",
+            "сейчас",
+            "сегодня",
+            "вчера",
+            "завтра",
+            "так",
+            "сделать",
+            "сделал",
+            "сделали",
+            "сделай",
+            "сделаю",
+            "делать",
+            "делаю",
+            "делаешь",
+            "делаем",
+            "делаете",
+            "просто",
+            "вообще",
+            "ладно",
+            "хорошо",
+            "конечно",
+            "ну",
+            "ой",
+            "ах",
+            "эх",
+            "вот",
+            "это",
+            "этот",
+            "деплой",
+            "деплоя",
+            "деплою",
+            "на",
+            "от",
+            "до",
+            "про",
+            "для",
+            "без",
+            "через",
+            "мой",
+            "моя",
+            "моё",
+            "мои",
+            "моего",
+            "моей",
+            "моему",
+            "твой",
+            "твоя",
+            "твоё",
+            "твои",
+            "ваш",
+            "ваша",
+            "ваше",
+            "ваши",
+            "же",
+            "ж",
+            "ли",
+            "бы",
+            "ведь",
+            "даже",
+            "уже",
         }
         import re
+
         words = re.findall(r"[а-яёa-z]+", raw.lower())
         kept = [w for w in words if w not in stop_words and len(w) > 1]
         return " ".join(kept) if kept else raw
@@ -132,7 +222,9 @@ class SearchService:
         try:
             req = urllib.request.Request(
                 url,
-                headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"},
+                headers={
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+                },
             )
             with urllib.request.urlopen(req, timeout=10) as resp:
                 return json.loads(resp.read())
@@ -159,12 +251,29 @@ class SearchService:
                 return ""
             current = data.get("current", {})
             daily = data.get("daily", {})
-            weather_codes = {0: "ясно", 1: "преимущественно ясно", 2: "переменная облачность", 3: "пасмурно",
-                             45: "туман", 48: "изморозь", 51: "морось", 53: "морось", 55: "морось",
-                             61: "дождь", 63: "дождь", 65: "сильный дождь",
-                             71: "снег", 73: "снег", 75: "сильный снег",
-                             80: "ливень", 81: "ливень", 82: "сильный ливень",
-                             95: "гроза", 96: "гроза с градом", 99: "гроза с градом"}
+            weather_codes = {
+                0: "ясно",
+                1: "преимущественно ясно",
+                2: "переменная облачность",
+                3: "пасмурно",
+                45: "туман",
+                48: "изморозь",
+                51: "морось",
+                53: "морось",
+                55: "морось",
+                61: "дождь",
+                63: "дождь",
+                65: "сильный дождь",
+                71: "снег",
+                73: "снег",
+                75: "сильный снег",
+                80: "ливень",
+                81: "ливень",
+                82: "сильный ливень",
+                95: "гроза",
+                96: "гроза с градом",
+                99: "гроза с градом",
+            }
             wc = current.get("weather_code", 0)
             desc = weather_codes.get(wc, f"код {wc}")
             lines = [
@@ -178,7 +287,9 @@ class SearchService:
             codes = daily.get("weather_code", [])
             for i in range(min(len(dates), 3)):
                 d_desc = weather_codes.get(codes[i] if i < len(codes) else 0, "")
-                lines.append(f"\n{dates[i]}: {d_desc}, {t_min[i] if i < len(t_min) else '?'}..{t_max[i] if i < len(t_max) else '?'}°C")
+                lines.append(
+                    f"\n{dates[i]}: {d_desc}, {t_min[i] if i < len(t_min) else '?'}..{t_max[i] if i < len(t_max) else '?'}°C"
+                )
             return "\n".join(lines)
         except Exception as e:
             logger.warning(f"Open-Meteo API failed: {e}")
@@ -200,8 +311,14 @@ class SearchService:
             ]
             if len(forecast) > 1:
                 for day in forecast[1:]:
-                    desc = day.get("hourly", [{}])[0].get("lang_ru", [{}])[0].get("value", "")
-                    lines.append(f"\n{day.get('date', '')}: {desc}, {day.get('mintempC', '?')}..{day.get('maxtempC', '?')}°C")
+                    desc = (
+                        day.get("hourly", [{}])[0]
+                        .get("lang_ru", [{}])[0]
+                        .get("value", "")
+                    )
+                    lines.append(
+                        f"\n{day.get('date', '')}: {desc}, {day.get('mintempC', '?')}..{day.get('maxtempC', '?')}°C"
+                    )
             return "\n".join(lines)
         except Exception as e:
             logger.warning(f"wttr.in API failed: {e}")
@@ -225,49 +342,84 @@ class SearchService:
             logger.warning(f"Currency API failed: {e}")
             return ""
 
-    def _horoscope_api(self, sign: str = "") -> str:
+    def _horoscope_mailru(self, sign: str = "") -> str:
         try:
-            sign_variants = {
-                "овен": 1, "овна": 1, "овну": 1,
-                "телец": 2, "тельца": 2, "тельцу": 2,
-                "близнецы": 3, "близнецов": 3,
-                "рак": 4, "рака": 4, "раку": 4,
-                "лев": 5, "льва": 5, "льву": 5,
-                "дева": 6, "девы": 6, "деве": 6,
-                "весы": 7, "весов": 7,
-                "скорпион": 8, "скорпиона": 8, "скорпиону": 8,
-                "стрелец": 9, "стрельца": 9, "стрельцу": 9,
-                "козерог": 10, "козерога": 10, "козерогу": 10,
-                "водолей": 11, "водолея": 11, "водолею": 11,
-                "рыбы": 12, "рыб": 12,
+            sign_map: dict[str, tuple[str, str]] = {
+                "овен": ("aries", "Овен"),
+                "овна": ("aries", "Овен"),
+                "овну": ("aries", "Овен"),
+                "телец": ("taurus", "Телец"),
+                "тельца": ("taurus", "Телец"),
+                "тельцу": ("taurus", "Телец"),
+                "близнецы": ("gemini", "Близнецы"),
+                "близнецов": ("gemini", "Близнецы"),
+                "рак": ("cancer", "Рак"),
+                "рака": ("cancer", "Рак"),
+                "раку": ("cancer", "Рак"),
+                "лев": ("leo", "Лев"),
+                "льва": ("leo", "Лев"),
+                "льву": ("leo", "Лев"),
+                "дева": ("virgo", "Дева"),
+                "девы": ("virgo", "Дева"),
+                "деве": ("virgo", "Дева"),
+                "весы": ("libra", "Весы"),
+                "весов": ("libra", "Весы"),
+                "скорпион": ("scorpio", "Скорпион"),
+                "скорпиона": ("scorpio", "Скорпион"),
+                "скорпиону": ("scorpio", "Скорпион"),
+                "стрелец": ("sagittarius", "Стрелец"),
+                "стрельца": ("sagittarius", "Стрелец"),
+                "стрельцу": ("sagittarius", "Стрелец"),
+                "козерог": ("capricorn", "Козерог"),
+                "козерога": ("capricorn", "Козерог"),
+                "козерогу": ("capricorn", "Козерог"),
+                "водолей": ("aquarius", "Водолей"),
+                "водолея": ("aquarius", "Водолей"),
+                "водолею": ("aquarius", "Водолей"),
+                "рыбы": ("pisces", "Рыбы"),
+                "рыб": ("pisces", "Рыбы"),
             }
             sign_lower = sign.lower()
-            num = None
-            matched_name = None
-            for name, n in sign_variants.items():
-                if name in sign_lower:
-                    num = n
-                    matched_name = {
-                        1: "Овен", 2: "Телец", 3: "Близнецы", 4: "Рак",
-                        5: "Лев", 6: "Дева", 7: "Весы", 8: "Скорпион",
-                        9: "Стрелец", 10: "Козерог", 11: "Водолей", 12: "Рыбы",
-                    }[n]
+            en_slug: str | None = None
+            ru_name: str | None = None
+            for ru, (en, name) in sign_map.items():
+                if ru in sign_lower:
+                    en_slug = en
+                    ru_name = name
                     break
-            if num and matched_name:
-                    req = urllib.request.Request(
-                        f"https://ignio.com/r/dly/export/astrologic/xml/{num}.xml",
-                        headers={"User-Agent": "Mozilla/5.0"},
-                    )
-                    with urllib.request.urlopen(req, timeout=10) as resp:
-                        raw = resp.read().decode("1251")
-                    m = re.search(r"<today[^>]*>(.*?)</today>", raw, re.DOTALL)
-                    if m:
-                        text = m.group(1).strip()
-                        text = re.sub(r"<[^>]+>", "", text)
-                        return f"Гороскоп для {matched_name} на сегодня:\n{text[:500]}"
-            return f"Гороскоп на сегодня: {sign} — уточните знак зодиака (овен, телец и т.д.)"
+
+            if not en_slug or not ru_name:
+                return (
+                    f"Гороскоп на сегодня: {sign} — "
+                    "уточните знак зодиака (овен, телец и т.д.)"
+                )
+
+            url = f"https://horo.mail.ru/prediction/{en_slug}/today/"
+            req = urllib.request.Request(
+                url, headers={"User-Agent": "Mozilla/5.0"}
+            )
+            with urllib.request.urlopen(req, timeout=10) as resp:
+                html = resp.read().decode("utf-8", errors="replace")
+
+            from bs4 import BeautifulSoup
+
+            soup = BeautifulSoup(html, "lxml")
+            text = soup.get_text(separator=" ", strip=True)
+
+            m = re.search(
+                r"Рыбы\s+\d+\s+\S+\s*-\s*\d+\s+\S+\s+(.*?)(?:Финансы|$)",
+                text,
+                re.DOTALL,
+            )
+            if m:
+                horo = m.group(1).strip()
+                horo = re.sub(r"\s+", " ", horo)
+                if len(horo) > 50:
+                    return f"Гороскоп для {ru_name} на сегодня:\n{horo[:500]}"
+
+            return f"Гороскоп для {ru_name} на сегодня: не удалось получить прогноз"
         except Exception as e:
-            logger.warning(f"Horoscope API failed: {e}")
+            logger.warning(f"horo.mail.ru failed: {e}")
             return ""
 
     def search(self, query: str) -> str:
@@ -291,18 +443,22 @@ class SearchService:
                 if result:
                     logger.info(f"Currency API: found for '{query}'")
                     return self._filter_stoplist(result)
-                search_q = f"курс {'доллара' if 'доллар' in lower else 'евро'} цб рф сегодня"
+                search_q = (
+                    f"курс {'доллара' if 'доллар' in lower else 'евро'} цб рф сегодня"
+                )
                 result = self._filter_stoplist(self._search_web(search_q))
                 if result:
                     return result
 
             if "гороскоп" in lower:
                 clean_h = self._dedup_clean(clean, "гороскоп")
-                result = self._horoscope_api(clean_h)
+                result = self._horoscope_mailru(clean_h)
                 if result:
-                    logger.info(f"Horoscope API: found for '{query}'")
+                    logger.info(f"Horoscope Mail.ru: found for '{query}'")
                     return self._filter_stoplist(result)
-                search_q = f"гороскоп {clean_h} сегодня" if clean_h else "гороскоп сегодня"
+                search_q = (
+                    f"гороскоп {clean_h} сегодня" if clean_h else "гороскоп сегодня"
+                )
                 result = self._filter_stoplist(self._search_web(search_q))
                 if result:
                     return result
