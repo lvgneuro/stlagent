@@ -1,1 +1,1 @@
-web: python -m bot.main
+web: python -m max_bot.main

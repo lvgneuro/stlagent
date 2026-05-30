@@ -19,17 +19,13 @@ model_url_cache: dict[str, str] = {}
 async def load_catalog_urls() -> None:
     """Load model URLs from catalog parsers."""
     global model_url_cache
-    try:
-        logger.info("Загрузка URL каталога...")
-        from bot.services.catalog_parser import update_catalog_urls
-
-        model_url_cache = await update_catalog_urls()
-        logger.info(f"Загружено {len(model_url_cache)} URL моделей из каталогов")
-    except Exception as e:
-        import traceback
-
-        logger.warning(f"Ошибка загрузки URL каталога: {e}")
-        logger.warning(f"Traceback: {traceback.format_exc()}")
+    # Temporarily disabled to avoid importing bot.services which may bring in real aiogram
+    # logger.info("Загрузка URL каталога...")
+    # from bot.services.catalog_parser import update_catalog_urls
+    #
+    # model_url_cache = await update_catalog_urls()
+    # logger.info(f"Загружено {len(model_url_cache)} URL моделей из каталогов")
+    model_url_cache = {}
 
 
 WEB_SEARCH_TOOL = {
