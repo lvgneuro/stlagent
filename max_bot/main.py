@@ -59,9 +59,6 @@ aiogram_bot_module.Bot = MaxBot
 # We'll use the Dispatcher from our fake aiogram (now accessible as aiogram.dispatcher)
 from aiogram.dispatcher import Dispatcher
 
-# Debug: print where Dispatcher comes from
-logging.info(f"Dispatcher imported from: {Dispatcher.__module__}")
-
 dp = Dispatcher()
 dp.include_router(echo.router)
 
