@@ -22,6 +22,36 @@ def _load_catalog() -> str:
     return _catalog_text
 
 
+_BRAND_KEYWORDS: dict[str, list[str]] = {
+    "калинка": ["калинка"],
+    "опрайм": ["опрайм"],
+    "oprime": ["опрайм", "oprime"],
+    "ривалли": ["ривалли", "rivalli"],
+    "rivalli": ["ривалли", "rivalli"],
+    "андреа": ["андреа", "andrea"],
+    "andrea": ["андреа", "andrea"],
+    "homelike18": ["homelike18", "хоумлайк"],
+    "frendom": ["frendom", "френдом"],
+    "lineaflex": ["lineaflex", "линеафлекс"],
+}
+
+
+def _detect_brand(words: list[str]) -> str | None:
+    """Detect brand from query words."""
+    for w in words:
+        for brand, keywords in _BRAND_KEYWORDS.items():
+            if w in keywords:
+                return brand
+    return None
+
+
+def _section_matches_brand(section_header: str, brand: str) -> bool:
+    """Check if a section header belongs to the given brand."""
+    header_lower = section_header.lower()
+    keywords = _BRAND_KEYWORDS.get(brand, [])
+    return any(kw in header_lower for kw in keywords)
+
+
 def _word_match_count(line: str, words: list[str]) -> int:
     lowered = line.lower()
     return sum(1 for w in words if w in lowered)
@@ -31,6 +61,8 @@ def search_catalog(query: str) -> str:
     """Search the furniture catalog by query string.
 
     Matches brand names, model names, categories, and descriptions.
+    If a known brand is mentioned in the query, results are restricted
+    to only that brand's sections.
     """
     catalog = _load_catalog()
     if not catalog:
@@ -38,16 +70,11 @@ def search_catalog(query: str) -> str:
 
     query_lower = query.lower()
     words = query_lower.split()
-    n_words = len(words)
+    brand_filter = _detect_brand(words)
 
     lines = catalog.split("\n")
     matched: list[str] = []
-    current_section = ""
-    active_sections: set[str] = set()
-    shown_sections: set[str] = set()
-    # For single-word queries, any match in a section header is enough
-    # For multi-word queries, require at least 2 words to match a section
-    min_section_match = 1 if n_words == 1 else max(2, n_words // 2 + 1)
+    inside_brand_section = brand_filter is None  # if no brand filter, accept all sections
 
     for line in lines:
         stripped = line.strip()
@@ -57,30 +84,21 @@ def search_catalog(query: str) -> str:
         is_section_header = stripped.startswith("===") or stripped.startswith("---")
 
         if is_section_header:
-            current_section = stripped
-            if _word_match_count(stripped, words) >= min_section_match:
-                active_sections.add(stripped)
-                matched.append(stripped)
-                shown_sections.add(stripped)
+            if brand_filter:
+                inside_brand_section = _section_matches_brand(stripped, brand_filter)
+            else:
+                inside_brand_section = True
+            continue
+
+        # Skip lines outside the brand-filtered section
+        if not inside_brand_section:
             continue
 
         count = _word_match_count(stripped, words)
-        line_in_active_section = current_section in active_sections
-
         if count == 0:
             continue
 
-        # In a matching section → include all matching lines
-        if line_in_active_section:
-            if current_section not in shown_sections:
-                matched.append(current_section)
-                shown_sections.add(current_section)
-            matched.append(stripped)
-            continue
-
-        # Outside matching section → only include if ≥2 words match
-        if count >= 2 or n_words == 1:
-            matched.append(stripped)
+        matched.append(stripped)
 
     if not matched:
         return ""
