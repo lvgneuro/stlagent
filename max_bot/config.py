@@ -10,7 +10,7 @@ load_dotenv()
 
 logger = logging.getLogger(__name__)
 
-MAX_BOT_TOKEN = os.getenv("MAX_BOT_TOKEN")
+MAX_TOKEN = os.getenv("MAX_TOKEN")
 WEBHOOK_URL = (
     os.getenv("WEBHOOK_URL")
     or os.getenv("RENDER_EXTERNAL_URL")
@@ -22,10 +22,10 @@ HOST = os.getenv("HOST", "0.0.0.0")
 PORT = int(os.getenv("PORT", "8080"))
 TELEGRAM_GROUP_ID = os.getenv("TELEGRAM_GROUP_ID")
 
-if not MAX_BOT_TOKEN:
-    print(f"DEBUG: MAX_BOT_TOKEN env var = '{MAX_BOT_TOKEN}'", file=sys.stderr)
+if not MAX_TOKEN:
+    print(f"DEBUG: MAX_TOKEN env var = '{MAX_TOKEN}'", file=sys.stderr)
     print(
         f"DEBUG: All env vars with TOKEN: {[k for k in os.environ.keys() if 'TOKEN' in k]}",
         file=sys.stderr,
     )
-    raise ValueError("MAX_BOT_TOKEN not found in .env file")
+    raise ValueError("MAX_TOKEN not found in .env file")

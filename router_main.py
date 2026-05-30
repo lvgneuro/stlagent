@@ -24,7 +24,7 @@ BASE_URL = (
     or "https://stlagent-5qrr.onrender.com"
 )
 BOT_TOKEN = os.getenv("BOT_TOKEN")
-MAX_BOT_TOKEN = os.getenv("MAX_BOT_TOKEN")
+MAX_TOKEN = os.getenv("MAX_TOKEN")
 TELEGRAM_GROUP_ID = os.getenv("TELEGRAM_GROUP_ID")
 TG_WEBHOOK_PATH = os.getenv("TG_WEBHOOK_PATH", "/tg-webhook")
 MAX_WEBHOOK_PATH = os.getenv("MAX_WEBHOOK_PATH", "/max-webhook")
@@ -40,7 +40,11 @@ from aiogram.enums import ParseMode
 from aiogram.dispatcher.dispatcher import Dispatcher
 from aiogram.types import Update
 
-tg_bot = Bot(token=BOT_TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML)) if BOT_TOKEN else None
+tg_bot = (
+    Bot(token=BOT_TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
+    if BOT_TOKEN
+    else None
+)
 tg_dp = Dispatcher()
 
 from bot.database import db as tg_db
@@ -54,14 +58,9 @@ tg_dp.include_router(tg_router)
 max_bot = None
 max_dp = None
 
-if MAX_BOT_TOKEN:
-    from max_bot.services.max_client import MaxBot
-    max_bot = MaxBot(token=MAX_BOT_TOKEN)
-    # We reuse the SAME echo router — MaxBot matches the Bot interface
-    # (send_message, send_photo, get_file, etc.)
-
 
 # ── Handlers ──────────────────────────────────────────────────
+
 
 async def telegram_webhook_handler(request: web.Request) -> web.Response:
     try:
@@ -107,7 +106,9 @@ async def max_webhook_handler(request: web.Request) -> web.Response:
                 },
                 "chat": {
                     "id": recipient.get("chat_id", 0),
-                    "type": "private" if recipient.get("chat_type", "dialog") == "dialog" else recipient.get("chat_type", "private"),
+                    "type": "private"
+                    if recipient.get("chat_type", "dialog") == "dialog"
+                    else recipient.get("chat_type", "private"),
                     "first_name": sender.get("first_name"),
                     "last_name": sender.get("last_name"),
                     "username": sender.get("username"),
@@ -129,6 +130,7 @@ async def old_webhook_fallback(request: web.Request) -> web.Response:
 
 # ── Startup / Shutdown ───────────────────────────────────────
 
+
 async def on_startup(app: web.Application) -> None:
     await tg_db.init_db()
     logger.info("База данных инициализирована")
@@ -145,6 +147,7 @@ async def on_startup(app: web.Application) -> None:
         logger.info(f"Max вебхук: {max_url}")
 
     from bot.database import db
+
     count = await db.get_sofa_count()
     logger.info(f"Диванов в БД: {count}")
 
@@ -164,6 +167,7 @@ async def on_shutdown(app: web.Application) -> None:
 
 # ── Workers ───────────────────────────────────────────────────
 
+
 def _is_night() -> bool:
     now = datetime.now(YEKATERINBURG_TZ)
     return now.hour >= 23 or now.hour < 9
@@ -180,11 +184,15 @@ async def _daily_indexing(bot: Bot) -> None:
         try:
             from bot.services.rivalli_parser import run_indexing
             from bot.database import db
+
             sofas = await run_indexing()
             for s in sofas:
                 await db.save_sofa(
-                    slug=s.slug, name=s.name, url=s.url,
-                    category=s.category, description=s.description,
+                    slug=s.slug,
+                    name=s.name,
+                    url=s.url,
+                    category=s.category,
+                    description=s.description,
                     features=s.features,
                     image_urls=",".join(s.image_urls) if s.image_urls else None,
                 )
@@ -205,13 +213,15 @@ async def _reminder_worker(bot: Bot) -> None:
             if not _is_night():
                 from bot.database import db
                 from bot.services.ai_service import get_ai_service
+
                 for interval in ("15min", "3h", "1d"):
                     for uid, topic, last in await db.get_pending_reminders([interval]):
                         if uid == 1696951195:
                             continue
                         prompt = (
                             f'Клиент не ответил после: "{last[:500]}"\n\nОтправь мягкое напоминание 1-2 предложения.'
-                            if last else "Отправь мягкое напоминание."
+                            if last
+                            else "Отправь мягкое напоминание."
                         )
                         resp = await get_ai_service().get_response(prompt, [], uid)
                         resp = resp.replace("\\n\\n", "\n\n").replace("\\n", "\n")
@@ -247,7 +257,9 @@ async def _lead_worker(bot: Bot) -> None:
                 for conv in rows.scalars().all():
                     if conv.user_id == 1696951195:
                         continue
-                    msgs = await db.get_messages_after_lead(conv.user_id, conv.lead_sent_at)
+                    msgs = await db.get_messages_after_lead(
+                        conv.user_id, conv.lead_sent_at
+                    )
                     if msgs and TELEGRAM_GROUP_ID:
                         lines = []
                         for m in msgs:
@@ -256,7 +268,9 @@ async def _lead_worker(bot: Bot) -> None:
                             if m.bot_response and not m.bot_response.startswith("["):
                                 lines.append(f"🤖 {m.bot_response[:80]}")
                         if lines:
-                            text = "🔄 <b>Обновление по заявке</b>\n\n" + "\n".join(lines)
+                            text = "🔄 <b>Обновление по заявке</b>\n\n" + "\n".join(
+                                lines
+                            )
                             await bot.send_message(int(TELEGRAM_GROUP_ID), text)
                             conv.last_lead_update_at = conv.lead_sent_at
                             await session.commit()
@@ -266,6 +280,7 @@ async def _lead_worker(bot: Bot) -> None:
 
 
 # ── Main ──────────────────────────────────────────────────────
+
 
 async def main() -> None:
     if not BOT_TOKEN:

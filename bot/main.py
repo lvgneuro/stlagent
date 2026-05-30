@@ -1,15 +1,18 @@
 from __future__ import annotations
 
 import asyncio
+import json
 import logging
+import os
 import sys
 from datetime import datetime, timedelta, timezone
+from urllib.parse import urlparse
 
 from aiohttp import web
 from aiogram import Bot, Dispatcher
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
-from aiogram.webhook.aiohttp_server import SimpleRequestHandler
+from aiogram.types import Update
 
 from bot.config import (
     BOT_TOKEN,
@@ -189,12 +192,10 @@ async def on_startup(bot: Bot) -> None:
     if not WEBHOOK_URL:
         raise ValueError("WEBHOOK_URL is not set")
     await bot.set_webhook(WEBHOOK_URL)
-    logger.info(f"Вебхук установлен на {WEBHOOK_URL}")
+    logger.info(f"Telegram вебхук: {WEBHOOK_URL}")
 
     sofa_count = await db.get_sofa_count()
     logger.info(f"Количество диванов в БД: {sofa_count}")
-
-    logger.info("В БД проиндексировано 82 дивана. Пропуск начальной индексации.")
 
     asyncio.create_task(daily_sofa_indexing(bot))
     asyncio.create_task(reminder_worker(bot))
@@ -203,7 +204,77 @@ async def on_startup(bot: Bot) -> None:
 
 async def on_shutdown(bot: Bot) -> None:
     await bot.delete_webhook()
-    logger.info("Вебхук удалён")
+    logger.info("Вебхук Telegram удалён")
+
+
+def _resolve_base_url() -> str:
+    """Get the base URL (scheme + host) without path."""
+    render_url = os.getenv("RENDER_EXTERNAL_URL")
+    if render_url:
+        return render_url.rstrip("/")
+    base = WEBHOOK_URL or "https://stlagent-5qrr.onrender.com"
+    parsed = urlparse(base)
+    return f"{parsed.scheme}://{parsed.netloc}"
+
+
+async def webhook_handler(request: web.Request) -> web.Response:
+    """Handle POST /webhook — Telegram updates OR Max messages (legacy path)."""
+    try:
+        body = await request.text()
+        data = json.loads(body)
+    except (json.JSONDecodeError, UnicodeDecodeError):
+        return web.Response(status=200, text="OK")
+
+    is_telegram = "update_id" in data
+    is_max = (
+        not is_telegram
+        and "message" in data
+        and isinstance(data["message"], dict)
+        and "sender" in data["message"]
+    )
+
+    if is_max:
+        max_bot = request.app.get("max_bot")
+        if max_bot:
+            await _process_max_update(request.app["dp"], max_bot, data)
+        return web.Response(status=200, text="OK")
+
+    if is_telegram:
+        try:
+            update = Update.model_validate(data)
+            bot = request.app.get("bot")
+            if bot:
+                await request.app["dp"].feed_update(bot=bot, update=update)
+        except Exception as e:
+            logger.warning(f"Ошибка обработки Telegram update: {e}")
+        return web.Response(status=200, text="OK")
+
+    return web.Response(status=200, text="OK")
+
+
+async def max_webhook_handler(request: web.Request) -> web.Response:
+    """Handle POST /max-webhook — Max platform messages."""
+    try:
+        data = await request.json()
+    except Exception:
+        return web.Response(status=200, text="OK")
+
+    max_bot = request.app.get("max_bot")
+    if max_bot:
+        await _process_max_update(request.app["dp"], max_bot, data)
+    return web.Response(status=200, text="OK")
+
+
+async def _process_max_update(dp: Dispatcher, max_bot, data: dict) -> None:
+    """Convert Max payload and feed to dispatcher."""
+    from max_bot.converter import max_to_telegram_dict
+
+    try:
+        update_dict = max_to_telegram_dict(data)
+        update = Update.model_validate(update_dict)
+        await dp.feed_update(bot=max_bot, update=update)
+    except Exception as e:
+        logger.error(f"Ошибка обработки Max update: {e}")
 
 
 async def main() -> None:
@@ -222,25 +293,69 @@ async def main() -> None:
 
     bot = Bot(token=BOT_TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
 
-    await on_startup(bot)
-
     app = web.Application()
     app["bot"] = bot
+    app["dp"] = dp
 
-    webhook_request_handler = SimpleRequestHandler(dispatcher=dp, bot=bot)
-    webhook_request_handler.register(app, path=WEBHOOK_PATH)
+    # Max bot (optional)
+    MAX_TOKEN = os.getenv("MAX_TOKEN")
+    MAX_WEBHOOK_PATH = os.getenv("MAX_WEBHOOK_PATH", "/max-webhook")
+    max_bot = None
+    if MAX_TOKEN:
+        from max_bot.services.max_client import MaxBot
 
+        max_bot = MaxBot(token=MAX_TOKEN)
+        app["max_bot"] = max_bot
+        logger.info("Max bot инициализирован")
+
+    # Register routes
+    app.router.add_post(WEBHOOK_PATH, webhook_handler)
+    if max_bot:
+        app.router.add_post(MAX_WEBHOOK_PATH, max_webhook_handler)
+
+    # Register Telegram webhook
+    await bot.set_webhook(WEBHOOK_URL)
+    logger.info(f"Telegram вебхук: {WEBHOOK_URL}")
+
+    # Register Max webhook
+    if max_bot:
+        base_url = _resolve_base_url()
+        max_full_url = base_url + MAX_WEBHOOK_PATH
+        try:
+            await max_bot.set_webhook(max_full_url)
+            logger.info(f"Max вебхук: {max_full_url}")
+        except Exception as e:
+            logger.warning(f"Не удалось зарегистрировать Max вебхук: {e}")
+
+    # Start background tasks
+    sofa_count = await db.get_sofa_count()
+    logger.info(f"Количество диванов в БД: {sofa_count}")
+
+    asyncio.create_task(daily_sofa_indexing(bot))
+    asyncio.create_task(reminder_worker(bot))
+    asyncio.create_task(lead_update_worker(bot))
+
+    # Start HTTP server
     runner = web.AppRunner(app)
     await runner.setup()
     site = web.TCPSite(runner, HOST, PORT)
     await site.start()
 
-    logger.info(f"Вебхук-сервер запущен на http://{HOST}:{PORT}{WEBHOOK_PATH}")
+    logger.info(f"Вебхук-сервер запущен на http://{HOST}:{PORT}")
+    logger.info(f"  Telegram: {WEBHOOK_PATH}")
+    if max_bot:
+        logger.info(f"  Max: {MAX_WEBHOOK_PATH}")
 
     try:
         await asyncio.Event().wait()
     finally:
-        await on_shutdown(bot)
+        await bot.delete_webhook()
+        logger.info("Вебхук Telegram удалён")
+        if max_bot:
+            try:
+                await max_bot.delete_webhook()
+            except Exception:
+                pass
         await runner.cleanup()
 
 

@@ -12,14 +12,15 @@ if fake_aiogram_dir not in sys.path:
     sys.path.insert(0, fake_aiogram_dir)
 
 # Remove any real aiogram modules that might have been loaded.
-modules_to_remove = [mod for mod in sys.modules if mod.startswith('aiogram')]
+modules_to_remove = [mod for mod in sys.modules if mod.startswith("aiogram")]
 for mod in modules_to_remove:
     del sys.modules[mod]
 
 # Import the fake aiogram package
 import fake_aiogram
+
 # Replace the aiogram module with our fake
-sys.modules['aiogram'] = fake_aiogram
+sys.modules["aiogram"] = fake_aiogram
 # --- End replacement ---
 
 import asyncio
@@ -29,7 +30,7 @@ from datetime import datetime, timedelta, timezone
 from aiohttp import web
 
 from max_bot.config import (
-    MAX_BOT_TOKEN,
+    MAX_TOKEN,
     WEBHOOK_URL,
     WEBHOOK_PATH,
     HOST,
@@ -148,7 +149,9 @@ async def reminder_worker(bot: MaxBot) -> None:
                         response = await get_ai_service().get_response(
                             prompt, [], user_id
                         )
-                        response = response.replace("\\n\\n", "\n\n").replace("\\n", "\n")
+                        response = response.replace("\\n\\n", "\n\n").replace(
+                            "\\n", "\n"
+                        )
                         try:
                             await bot.send_message(user_id, response[:500])
                             await db.mark_reminder_sent(user_id, interval)
@@ -261,7 +264,9 @@ def max_message_to_aiogram(update_data: dict):
     logger.debug(f"AiogramUpdate class: {AiogramUpdate}")
     logger.debug(f"AiogramUpdate module: {AiogramUpdate.__module__}")
 
-    update_type = update_data.get("update_type") or update_data.get("type")  # Handle both
+    update_type = update_data.get("update_type") or update_data.get(
+        "type"
+    )  # Handle both
     # Max does not send update_id; we can use timestamp as fallback or set 0.
     timestamp = update_data.get("timestamp", 0)
     logger.debug(f"Timestamp from update_data: {timestamp} (type: {type(timestamp)})")
@@ -271,7 +276,9 @@ def max_message_to_aiogram(update_data: dict):
     # We only handle message_created updates for now.
     if update_type != "message_created":
         # For other types (bot_started, etc.) we return an Update with no message.
-        logger.debug(f"Non-message_created update type: {update_type}, returning Update with no message")
+        logger.debug(
+            f"Non-message_created update type: {update_type}, returning Update with no message"
+        )
         return AiogramUpdate(update_id=update_id, message=None)
 
     msg = update_data.get("message", {})
@@ -294,7 +301,9 @@ def max_message_to_aiogram(update_data: dict):
     # Recipient (chat)
     recipient = msg.get("recipient", {})
     chat_id = recipient.get("chat_id", 0)
-    chat_type = recipient.get("chat_type", "private")  # dialog -> private, group -> group, channel -> channel
+    chat_type = recipient.get(
+        "chat_type", "private"
+    )  # dialog -> private, group -> group, channel -> channel
     # Map Max chat_type to aiogram Chat.type
     # aiogram expects: private, group, supergroup, channel
     if chat_type == "dialog":
@@ -339,10 +348,12 @@ def max_message_to_aiogram(update_data: dict):
         contact=None,
         photo=None,
     )
-    
+
     # Debug: Log the values we're about to use
-    logger.debug(f"About to create Update with: update_id={update_id}, message={message}")
-    
+    logger.debug(
+        f"About to create Update with: update_id={update_id}, message={message}"
+    )
+
     # Create and return the Update
     try:
         result = AiogramUpdate(update_id=update_id, message=message)
@@ -353,7 +364,9 @@ def max_message_to_aiogram(update_data: dict):
         logger.error(f"update_id value: {update_id} (type: {type(update_id)})")
         logger.error(f"message value: {message}")
         if message:
-            logger.error(f"message.message_id: {message.message_id} (type: {type(message.message_id)})")
+            logger.error(
+                f"message.message_id: {message.message_id} (type: {type(message.message_id)})"
+            )
             logger.error(f"message.date: {message.date} (type: {type(message.date)})")
             logger.error(f"message.chat: {message.chat} (type: {type(message.chat)})")
         raise
@@ -361,8 +374,8 @@ def max_message_to_aiogram(update_data: dict):
 
 async def main() -> None:
     logger.info("Запуск бота в режиме вебхука...")
-    if not MAX_BOT_TOKEN:
-        raise ValueError("MAX_BOT_TOKEN is not set")
+    if not MAX_TOKEN:
+        raise ValueError("MAX_TOKEN is not set")
     if not WEBHOOK_URL:
         raise ValueError("WEBHOOK_URL is not set")
 
@@ -370,9 +383,10 @@ async def main() -> None:
     logger.info("База данных инициализирована")
 
     from max_bot.services.ai_service import load_catalog_urls
+
     await load_catalog_urls()
 
-    bot = MaxBot(token=MAX_BOT_TOKEN)
+    bot = MaxBot(token=MAX_TOKEN)
     await on_startup(bot)
 
     app = web.Application()
@@ -389,7 +403,9 @@ async def main() -> None:
             aiogram_update = max_message_to_aiogram(update_data)
             logger.info(f"Converted update: {aiogram_update}")
         except Exception as e:
-            logger.error(f"Failed to convert Max update: {e}. Update data: {update_data}")
+            logger.error(
+                f"Failed to convert Max update: {e}. Update data: {update_data}"
+            )
             return web.Response(status=200, text="")  # Return 200 to avoid retries
         # Feed to dp
         try:
@@ -398,7 +414,7 @@ async def main() -> None:
             logger.error(f"Error while processing update: {e}")
             # Log the actual update object that caused the error
             logger.error(f"Failing update object: {aiogram_update}")
-            if hasattr(aiogram_update, 'message') and aiogram_update.message:
+            if hasattr(aiogram_update, "message") and aiogram_update.message:
                 logger.error(f"Failing message: {aiogram_update.message}")
                 logger.error(f"Failing message.chat: {aiogram_update.message.chat}")
             return web.Response(status=200, text="")  # Return 200 to avoid retries

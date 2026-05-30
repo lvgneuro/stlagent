@@ -4,6 +4,7 @@ import httpx
 
 logger = logging.getLogger(__name__)
 
+
 class MaxBot:
     def __init__(self, token: str, **kwargs):
         # Ignore any extra keyword arguments (like parse_mode) for compatibility
@@ -27,16 +28,18 @@ class MaxBot:
         }
         return await self._request("POST", "/messages/sendText", json=payload)
 
-    async def send_photo(self, chat_id: int, photo, caption: Optional[str] = None, **kwargs) -> Dict[str, Any]:
+    async def send_photo(
+        self, chat_id: int, photo, caption: Optional[str] = None, **kwargs
+    ) -> Dict[str, Any]:
         """Send a photo to a chat.
-        
+
         Accepts a file path (str), an FSInputFile, or any object with a 'path' attribute.
         Extra kwargs are ignored for compatibility.
         """
         # Try to extract a file path from various input types
         if isinstance(photo, str):
             path = photo
-        elif hasattr(photo, 'path'):
+        elif hasattr(photo, "path"):
             path = photo.path
         else:
             logger.warning(f"send_photo: unsupported photo type {type(photo)}")
@@ -47,11 +50,17 @@ class MaxBot:
             data["caption"] = caption
         with open(path, "rb") as f:
             files = {"photo": f}
-            return await self._request("POST", "/messages/sendPhoto", data=data, files=files)
+            return await self._request(
+                "POST", "/messages/sendPhoto", data=data, files=files
+            )
 
-    async def download(self, file_obj, destination: Optional[str] = None) -> bytes | None:
+    async def download(
+        self, file_obj, destination: Optional[str] = None
+    ) -> bytes | None:
         """Download a file. Placeholder for Max compatibility — always returns empty bytes."""
-        logger.warning(f"download called but Max does not support file download: {file_obj}")
+        logger.warning(
+            f"download called but Max does not support file download: {file_obj}"
+        )
         return b""
 
     async def get_file(self, file_id: str) -> bytes:

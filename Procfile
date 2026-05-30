@@ -1,1 +1,1 @@
-web: python router_main.py
+web: python -m bot.main
