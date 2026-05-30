@@ -6,20 +6,23 @@ import sys
 from datetime import datetime, timedelta, timezone
 import os
 
-# Replace the aiogram module with our fake one before any imports that might use aiogram.
-fake_aiogram_path = os.path.join(os.path.dirname(__file__), 'fake_aiogram')
-# Add the parent directory of fake_aiogram to sys.path so that we can import fake_aiogram as a package
-if os.path.dirname(fake_aiogram_path) not in sys.path:
-    sys.path.insert(0, os.path.dirname(fake_aiogram_path))
+# --- Replace aiogram with our fake ---
+# Add the directory containing the fake_aiogram package to sys.path
+# (the directory that contains the fake_aiogram folder)
+fake_aiogram_dir = os.path.dirname(__file__)  # E:\ТГ-агент\max_bot
+if fake_aiogram_dir not in sys.path:
+    sys.path.insert(0, fake_aiogram_dir)
 
 # Remove any real aiogram modules that might have been loaded.
 modules_to_remove = [mod for mod in sys.modules if mod.startswith('aiogram')]
 for mod in modules_to_remove:
     del sys.modules[mod]
 
-# Now import our fake aiogram and register it as the 'aiogram' module.
-import max_bot.fake_aiogram as fake_aiogram
+# Import the fake aiogram package
+import fake_aiogram
+# Replace the aiogram module with our fake
 sys.modules['aiogram'] = fake_aiogram
+# --- End replacement ---
 
 from aiohttp import web
 
@@ -39,42 +42,21 @@ from max_bot.services.max_client import MaxBot
 from max_bot.routers import echo
 
 # We need to patch the Bot class in the aiogram module to use our MaxBot.
-# The echo router will create a Bot instance via `Bot(token=BOT_TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))`
-# We want that Bot instance to actually be our MaxBot, but with the same interface.
-# We can do this by monkey-patching the Bot class in the aiogram module.
 import aiogram.bot as aiogram_bot_module
 
-# Replace the Bot class in the aiogram module with a subclass that delegates to MaxBot.
-# However, we need to keep the same constructor signature.
-# We'll create a wrapper class that inherits from the fake Bot (which is just a stub) and then
-# override the methods to call MaxBot.
-# But note: the echo router also uses `Bot` to call `set_webhook` and `delete_webhook`.
-# We'll make our wrapper such that when Bot(...) is called, it returns an instance of MaxBot
-# but with the same interface as the fake Bot (so that isinstance checks pass?).
-# Actually, the echo router does not do isinstance checks on Bot; it just calls methods.
-# So we can simply replace the Bot class in the aiogram module with our MaxBot class.
-# However, the Bot class in the aiogram module is also used for type hints? Not really.
-# Let's do: aiogram_bot_module.Bot = MaxBot
-# But we need to ensure that MaxBot has the same constructor signature as the fake Bot.
+# Replace the Bot class in the aiogram module with MaxBot.
+# We need to make sure MaxBot has the same signature as the fake Bot.
 # The fake Bot's __init__ is: def __init__(self, token: str = None, **kwargs)
 # Our MaxBot's __init__ is: def __init__(self, token: str):
-# We can adjust MaxBot to accept **kwargs and ignore them, or we can create a subclass.
-# Let's adjust MaxBot in max_client.py to accept **kwargs and ignore extra.
-# We'll do that in a moment.
-
-# For now, we'll assume we have adjusted MaxBot.
-# We'll replace the Bot class in the aiogram module with MaxBot.
+# We'll adjust MaxBot to accept **kwargs and ignore them.
+# We'll do that by modifying the MaxBot class in max_client.py to accept **kwargs.
+# But let's do it here by creating a wrapper if needed.
+# However, let's first check if MaxBot already accepts **kwargs.
+# We'll look at max_client.py: it does accept **kwargs in __init__.
+# So we can simply assign:
 aiogram_bot_module.Bot = MaxBot
 
-# Also, we need to patch the Dispatcher? The echo router does not use Dispatcher directly;
-# it uses the router and then in main.py we create a Dispatcher and include the router.
-# We'll keep using our own Dispatcher from the fake aiogram (which we will import below).
-# But note: the echo router does not import Dispatcher.
-
-logging.basicConfig(level=logging.INFO, stream=sys.stdout)
-logger = logging.getLogger(__name__)
-
-# We'll use the Dispatcher from our fake aiogram
+# We'll use the Dispatcher from our fake aiogram (now accessible as aiogram.dispatcher)
 from aiogram.dispatcher import Dispatcher
 
 dp = Dispatcher()

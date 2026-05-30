@@ -14,9 +14,9 @@ import tempfile
 
 from max_bot.config import TELEGRAM_GROUP_ID
 
-from bot.services.ai_service import get_ai_service
-from bot.services.rivalli_search import rivalli_search
-from bot.database import db
+from max_bot.services.ai_service import get_ai_service
+from max_bot.services.rivalli_search import rivalli_search
+from max_bot.database import db
 
 logger = logging.getLogger(__name__)
 
@@ -123,10 +123,10 @@ async def update_catalog_handler(message: Message) -> None:
 
     await message.answer("Обновляю каталог моделей с сайтов КАЛИНКА и ОПРАЙМ...")
 
-    from bot.services.ai_service import load_catalog_urls
+    from max_bot.services.ai_service import load_catalog_urls
 
     await load_catalog_urls()
-    from bot.services.ai_service import model_url_cache
+    from max_bot.services.ai_service import model_url_cache
 
     await message.answer(f"Каталог обновлён! Загружено {len(model_url_cache)} моделей.")
 
@@ -139,7 +139,7 @@ async def index_sofas_handler(message: Message) -> None:
 
     await message.answer("Начинаю индексацию каталога диванов Rivalli...")
 
-    from bot.services.rivalli_parser import run_indexing
+    from max_bot.services.rivalli_parser import run_indexing
 
     try:
         sofas = await run_indexing()
