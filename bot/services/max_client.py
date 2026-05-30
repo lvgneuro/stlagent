@@ -43,10 +43,21 @@ class MaxBot:
 
     async def send_message(self, chat_id: int, text: str, **kwargs) -> Dict[str, Any]:
         payload: dict[str, Any] = {"text": text}
-        logger.debug(f"Sending MAX message: {payload}")
-        result = await self._request("POST", "/messages", json=payload)
-        logger.info(f"MAX send_message response: {result}")
-        return result
+        params: dict[str, Any] = {}
+        if chat_id > 0:
+            params["user_id"] = chat_id
+        else:
+            params["chat_id"] = abs(chat_id)
+        logger.debug(f"Sending MAX message: {params} {payload}")
+        try:
+            result = await self._request(
+                "POST", "/messages", params=params, json=payload
+            )
+            logger.info(f"MAX send_message response: {result}")
+            return result
+        except httpx.HTTPStatusError as e:
+            logger.error(f"MAX send_message failed: {e}")
+            return {"ok": False, "error": str(e)}
 
     async def send_photo(
         self, chat_id: int, photo, caption: Optional[str] = None, **kwargs
@@ -58,10 +69,17 @@ class MaxBot:
         else:
             logger.warning(f"send_photo: unsupported photo type {type(photo)}")
             return {"ok": False, "error": "unsupported photo type"}
+        params: dict[str, Any] = {}
+        if chat_id > 0:
+            params["user_id"] = chat_id
+        else:
+            params["chat_id"] = abs(chat_id)
         data: dict[str, Any] = {"text": caption or ""}
         with open(path, "rb") as f:
             files = {"file": f}
-            return await self._request("POST", "/messages", data=data, files=files)
+            return await self._request(
+                "POST", "/messages", params=params, data=data, files=files
+            )
 
     async def download(self, file_obj, destination: Optional[str] = None) -> bytes | None:
         logger.warning(f"download called but MAX file download not supported: {file_obj}")

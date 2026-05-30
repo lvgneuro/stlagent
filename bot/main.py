@@ -218,37 +218,23 @@ def _resolve_base_url() -> str:
 
 
 async def webhook_handler(request: web.Request) -> web.Response:
-    """Handle POST /webhook — Telegram updates OR Max messages (legacy path)."""
+    """Handle POST /webhook — Telegram updates only."""
     try:
         body = await request.text()
         data = json.loads(body)
     except (json.JSONDecodeError, UnicodeDecodeError):
         return web.Response(status=200, text="OK")
 
-    is_telegram = "update_id" in data
-    is_max = (
-        not is_telegram
-        and "message" in data
-        and isinstance(data["message"], dict)
-        and "sender" in data["message"]
-    )
-
-    if is_max:
-        max_bot = request.app.get("max_bot")
-        if max_bot:
-            await _process_max_update(request.app["dp"], max_bot, data)
+    if "update_id" not in data:
         return web.Response(status=200, text="OK")
 
-    if is_telegram:
-        try:
-            update = Update.model_validate(data)
-            bot = request.app.get("bot")
-            if bot:
-                await request.app["dp"].feed_update(bot=bot, update=update)
-        except Exception as e:
-            logger.warning(f"Ошибка обработки Telegram update: {e}")
-        return web.Response(status=200, text="OK")
-
+    try:
+        update = Update.model_validate(data)
+        bot = request.app.get("bot")
+        if bot:
+            await request.app["dp"].feed_update(bot=bot, update=update)
+    except Exception as e:
+        logger.warning(f"Ошибка обработки Telegram update: {e}")
     return web.Response(status=200, text="OK")
 
 
