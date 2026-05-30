@@ -1,1 +1,1 @@
-web: python -m max_bot.main
+web: python router_main.py
