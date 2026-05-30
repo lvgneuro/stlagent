@@ -389,9 +389,13 @@ class SearchService:
                     break
 
             if not en_slug or not ru_name:
+                signs_list = [
+                    "овен", "телец", "близнецы", "рак", "лев", "дева",
+                    "весы", "скорпион", "стрелец", "козерог", "водолей", "рыбы",
+                ]
                 return (
-                    f"Гороскоп на сегодня: {sign} — "
-                    "уточните знак зодиака (овен, телец и т.д.)"
+                    "Гороскоп на сегодня. Напиши свой знак зодиака:\n"
+                    + ", ".join(s.capitalize() for s in signs_list)
                 )
 
             url = f"https://horo.mail.ru/prediction/{en_slug}/today/"
@@ -450,7 +454,17 @@ class SearchService:
                 if result:
                     return result
 
-            if "гороскоп" in lower:
+            is_zodiac = "гороскоп" in lower or any(
+                w in lower
+                for w in [
+                    "овен", "овна", "телец", "тельца", "близнецы", "близнецов",
+                    "рак", "рака", "лев", "льва", "дева", "девы",
+                    "весы", "весов", "скорпион", "скорпиона",
+                    "стрелец", "стрельца", "козерог", "козерога",
+                    "водолей", "водолея", "рыбы", "рыб",
+                ]
+            )
+            if is_zodiac:
                 clean_h = self._dedup_clean(clean, "гороскоп")
                 result = self._horoscope_mailru(clean_h)
                 if result:
