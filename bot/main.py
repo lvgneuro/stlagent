@@ -267,7 +267,7 @@ async def max_webhook_handler(request: web.Request) -> web.Response:
 
 async def _process_max_update(dp: Dispatcher, max_bot, data: dict) -> None:
     """Convert Max payload and feed to dispatcher."""
-    from max_bot.converter import max_to_telegram_dict
+    from bot.services.converter import max_to_telegram_dict
 
     try:
         update_dict = max_to_telegram_dict(data)
@@ -302,7 +302,7 @@ async def main() -> None:
     MAX_WEBHOOK_PATH = os.getenv("MAX_WEBHOOK_PATH", "/max-webhook")
     max_bot = None
     if MAX_BOT_TOKEN:
-        from max_bot.services.max_client import MaxBot
+        from bot.services.max_client import MaxBot
 
         max_bot = MaxBot(token=MAX_BOT_TOKEN)
         app["max_bot"] = max_bot
