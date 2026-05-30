@@ -341,6 +341,7 @@ async def main() -> None:
     app["bot"] = bot
 
     async def handle_request(request):
+        logger.info(f"Received webhook request: {request.method} {request.path}")
         try:
             update_data = await request.json()
         except Exception:
@@ -348,6 +349,7 @@ async def main() -> None:
         # Convert Max update to aiogram Update (using our fake types)
         try:
             aiogram_update = max_message_to_aiogram(update_data)
+            logger.info(f"Converted update: {aiogram_update}")
         except Exception as e:
             logger.error(f"Failed to convert Max update: {e}. Update data: {update_data}")
             return web.Response(status=200, text="")  # Return 200 to avoid retries
