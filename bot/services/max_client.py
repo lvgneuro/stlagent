@@ -11,6 +11,8 @@ logger = logging.getLogger(__name__)
 class MaxBot:
     def __init__(self, token: str, **kwargs):
         self.token = token
+        self.id = 0
+        self.username: str | None = None
         self.base_url = "https://platform-api.max.ru"
         self.client = httpx.AsyncClient(timeout=30.0)
 
