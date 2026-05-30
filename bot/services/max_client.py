@@ -35,6 +35,8 @@ class MaxBot:
         headers["Authorization"] = self.token
         url = f"{self.base_url}{endpoint}"
         response = await self.client.request(method, url, headers=headers, **kwargs)
+        if not response.is_success:
+            logger.warning(f"MAX API error {response.status_code} {endpoint}: {await response.text()}")
         response.raise_for_status()
         return response.json()
 
@@ -42,6 +44,8 @@ class MaxBot:
         payload: dict[str, Any] = {"text": text}
         if kwargs.get("parse_mode") in ("HTML", "Markdown"):
             payload["format"] = kwargs["parse_mode"].lower()
+        # Try with chat_id (recipient) — some MAX APIs require it
+        payload["chat_id"] = chat_id
         return await self._request("POST", "/messages", json=payload)
 
     async def send_photo(
