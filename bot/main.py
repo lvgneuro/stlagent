@@ -274,7 +274,7 @@ async def _process_max_update(dp: Dispatcher, max_bot, data: dict) -> None:
         update = Update.model_validate(update_dict)
         await dp.feed_update(bot=max_bot, update=update)
     except Exception as e:
-        logger.error(f"Ошибка обработки Max update: {e}")
+        logger.exception(f"Ошибка обработки Max update: {e}")
 
 
 async def main() -> None:
@@ -325,7 +325,7 @@ async def main() -> None:
             await max_bot.set_webhook(max_full_url)
             logger.info(f"Max вебхук: {max_full_url}")
         except Exception as e:
-            logger.warning(f"Не удалось зарегистрировать Max вебхук: {e}")
+            logger.exception(f"Не удалось зарегистрировать Max вебхук: {e}")
 
     # Start background tasks
     sofa_count = await db.get_sofa_count()
