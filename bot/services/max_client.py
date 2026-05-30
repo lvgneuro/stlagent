@@ -35,7 +35,7 @@ class MaxBot:
         headers["Authorization"] = self.token
         url = f"{self.base_url}{endpoint}"
         response = await self.client.request(method, url, headers=headers, **kwargs)
-        body = await response.text()
+        body = response.text
         if not response.is_success:
             print(f"MAX API ERROR {response.status_code} {endpoint}: {body[:500]}", flush=True)
         response.raise_for_status()
