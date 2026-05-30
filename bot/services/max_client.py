@@ -35,23 +35,22 @@ class MaxBot:
         headers["Authorization"] = self.token
         url = f"{self.base_url}{endpoint}"
         response = await self.client.request(method, url, headers=headers, **kwargs)
+        body = await response.text()
         if not response.is_success:
-            logger.warning(f"MAX API error {response.status_code} {endpoint}: {await response.text()}")
+            print(f"MAX API ERROR {response.status_code} {endpoint}: {body[:500]}", flush=True)
         response.raise_for_status()
         return response.json()
 
     async def send_message(self, chat_id: int, text: str, **kwargs) -> Dict[str, Any]:
         payload: dict[str, Any] = {"text": text}
-        if kwargs.get("parse_mode") in ("HTML", "Markdown"):
-            payload["format"] = kwargs["parse_mode"].lower()
-        # Try with chat_id (recipient) — some MAX APIs require it
-        payload["chat_id"] = chat_id
-        return await self._request("POST", "/messages", json=payload)
+        logger.debug(f"Sending MAX message: {payload}")
+        result = await self._request("POST", "/messages", json=payload)
+        logger.info(f"MAX send_message response: {result}")
+        return result
 
     async def send_photo(
         self, chat_id: int, photo, caption: Optional[str] = None, **kwargs
     ) -> Dict[str, Any]:
-        # For MAX, send photo as a message with image attachment
         if isinstance(photo, str):
             path = photo
         elif hasattr(photo, "path"):
@@ -59,14 +58,10 @@ class MaxBot:
         else:
             logger.warning(f"send_photo: unsupported photo type {type(photo)}")
             return {"ok": False, "error": "unsupported photo type"}
-        data: dict[str, Any] = {}
-        if caption:
-            data["caption"] = caption
+        data: dict[str, Any] = {"text": caption or ""}
         with open(path, "rb") as f:
             files = {"file": f}
-            return await self._request(
-                "POST", "/messages", data=data, files=files
-            )
+            return await self._request("POST", "/messages", data=data, files=files)
 
     async def download(self, file_obj, destination: Optional[str] = None) -> bytes | None:
         logger.warning(f"download called but MAX file download not supported: {file_obj}")
