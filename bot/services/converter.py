@@ -23,6 +23,11 @@ def max_to_telegram_dict(update_data: dict) -> dict:
     chat_type_map = {"dialog": "private", "group": "group", "channel": "channel"}
     chat_type = chat_type_map.get(chat_type_raw, "private")
 
+    # For personal chats (dialog), use sender's user_id as chat.id.
+    # recipient.chat_id may be a bot-internal ID, not the actual user.
+    if chat_type == "private":
+        chat_id = sender.get("user_id", chat_id)
+
     first_name = sender.get("first_name")
     if first_name is None:
         first_name = ""
