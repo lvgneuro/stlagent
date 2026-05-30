@@ -110,7 +110,9 @@ def is_sofa_request(text: str) -> bool:
 async def command_start_handler(message: Message) -> None:
     user_id = message.from_user.id if message.from_user else 0
     logger.info(f"Получен /start от {user_id}")
-    await message.answer("Интеллектуальный помощник по подбору мягкой мебели готов немедленно прийти к Вам на помощь!")
+    await message.answer(
+        "Интеллектуальный помощник по подбору мягкой мебели готов немедленно прийти к Вам на помощь!"
+    )
 
 
 @router.message(Command("обновить_каталог", prefix="/"))
@@ -420,6 +422,11 @@ async def ai_handler(message: Message, bot: Bot) -> None:
     username = message.from_user.username if message.from_user else None
     first_name = message.from_user.first_name if message.from_user else None
 
+    if first_name:
+        existing = await db.get_user_facts(user_id)
+        if "name" not in existing:
+            await db.save_fact(user_id, "name", first_name, context="first message")
+
     has_photo = message.photo is not None and len(message.photo) > 0
 
     if has_photo:
@@ -632,6 +639,7 @@ async def ai_handler(message: Message, bot: Bot) -> None:
                     f"Пользователь смотрит диван {first.name}. Расскажи коротко про цену, наличие в салонах Тюмени и почему именно эту модель стоит выбрать. Отвечай коротко, 1-2 абзаца.",
                     conversation_history,
                     user_id,
+                    first_name=first_name,
                 )
                 follow_up = follow_up.replace("\\n\\n", "\n\n").replace("\\n", "\n")
                 follow_up = clean_html(follow_up)
@@ -682,7 +690,7 @@ async def ai_handler(message: Message, bot: Bot) -> None:
     thinking_msg = await message.answer("Думаю...")
     logger.info("Получение ответа от AI...")
     response = await get_ai_service().get_response(
-        user_text, conversation_history, user_id
+        user_text, conversation_history, user_id, first_name=first_name
     )
     response = response.replace("\\n\\n", "\n\n").replace("\\n", "\n")
     response = clean_html(response)
@@ -700,7 +708,17 @@ async def ai_handler(message: Message, bot: Bot) -> None:
     phone_match = phone_pattern.search(user_text)
     has_phone_keyword = any(
         word in user_text_lower
-        for word in ["номер", "телефон", "звоните", "позвонить", "позвонит", "свяжитесь", "+7", "8-9", "8 9"]
+        for word in [
+            "номер",
+            "телефон",
+            "звоните",
+            "позвонить",
+            "позвонит",
+            "свяжитесь",
+            "+7",
+            "8-9",
+            "8 9",
+        ]
     )
 
     if phone_match and has_phone_keyword:
