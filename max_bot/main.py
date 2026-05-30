@@ -30,7 +30,7 @@ from datetime import datetime, timedelta, timezone
 from aiohttp import web
 
 from max_bot.config import (
-    MAX_TOKEN,
+    MAX_BOT_TOKEN,
     WEBHOOK_URL,
     WEBHOOK_PATH,
     HOST,
@@ -374,8 +374,8 @@ def max_message_to_aiogram(update_data: dict):
 
 async def main() -> None:
     logger.info("Запуск бота в режиме вебхука...")
-    if not MAX_TOKEN:
-        raise ValueError("MAX_TOKEN is not set")
+    if not MAX_BOT_TOKEN:
+        raise ValueError("MAX_BOT_TOKEN is not set")
     if not WEBHOOK_URL:
         raise ValueError("WEBHOOK_URL is not set")
 
@@ -383,10 +383,9 @@ async def main() -> None:
     logger.info("База данных инициализирована")
 
     from max_bot.services.ai_service import load_catalog_urls
-
     await load_catalog_urls()
 
-    bot = MaxBot(token=MAX_TOKEN)
+    bot = MaxBot(token=MAX_BOT_TOKEN)
     await on_startup(bot)
 
     app = web.Application()

@@ -298,13 +298,13 @@ async def main() -> None:
     app["dp"] = dp
 
     # Max bot (optional)
-    MAX_TOKEN = os.getenv("MAX_TOKEN")
+    MAX_BOT_TOKEN = os.getenv("MAX_BOT_TOKEN")
     MAX_WEBHOOK_PATH = os.getenv("MAX_WEBHOOK_PATH", "/max-webhook")
     max_bot = None
-    if MAX_TOKEN:
+    if MAX_BOT_TOKEN:
         from max_bot.services.max_client import MaxBot
 
-        max_bot = MaxBot(token=MAX_TOKEN)
+        max_bot = MaxBot(token=MAX_BOT_TOKEN)
         app["max_bot"] = max_bot
         logger.info("Max bot инициализирован")
 

@@ -24,7 +24,7 @@ BASE_URL = (
     or "https://stlagent-5qrr.onrender.com"
 )
 BOT_TOKEN = os.getenv("BOT_TOKEN")
-MAX_TOKEN = os.getenv("MAX_TOKEN")
+MAX_BOT_TOKEN = os.getenv("MAX_BOT_TOKEN")
 TELEGRAM_GROUP_ID = os.getenv("TELEGRAM_GROUP_ID")
 TG_WEBHOOK_PATH = os.getenv("TG_WEBHOOK_PATH", "/tg-webhook")
 MAX_WEBHOOK_PATH = os.getenv("MAX_WEBHOOK_PATH", "/max-webhook")
