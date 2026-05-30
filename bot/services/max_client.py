@@ -16,6 +16,20 @@ class MaxBot:
         self.base_url = "https://platform-api.max.ru"
         self.client = httpx.AsyncClient(timeout=30.0)
 
+    async def __call__(self, method) -> Any:
+        """Handle aiogram TelegramMethod calls (e.g. from message.answer())."""
+        method_name = type(method).__name__
+        if method_name == "SendMessage":
+            return await self.send_message(method.chat_id, method.text)
+        if method_name == "SendPhoto":
+            return await self.send_photo(method.chat_id, method.photo, caption=getattr(method, "caption", None))
+        if method_name == "DeleteMessage":
+            return {"ok": True}
+        if method_name == "CopyMessage":
+            return await self.send_message(method.chat_id, getattr(method, "caption", "") or "")
+        logger.warning(f"MaxBot.__call__: unsupported method {method_name}")
+        return {"ok": False, "error": f"unsupported method {method_name}"}
+
     async def _request(self, method: str, endpoint: str, **kwargs) -> Dict[str, Any]:
         headers = kwargs.pop("headers", {})
         headers["Authorization"] = self.token
