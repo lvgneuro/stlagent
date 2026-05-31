@@ -90,38 +90,43 @@ async def daily_sofa_indexing(bot: Bot) -> None:
         await _run_indexing(bot)
 
 
-REMINDER_INTERVALS = ["15min", "3h", "1d"]
-REMINDER_CHECK_PERIOD = 60
+REMINDER_CHECK_PERIOD = 300
 
 
 async def reminder_worker(bot: Bot) -> None:
-    await asyncio.sleep(30)
+    await asyncio.sleep(60)
     while True:
         try:
             if _is_night_time():
                 logger.debug("Ночное время — напоминания отключены")
             else:
-                for interval in REMINDER_INTERVALS:
-                    pending = await db.get_pending_reminders([interval])
-                    for user_id, topic, last_msg in pending:
-                        if user_id == 1696951195:
-                            continue
-                        if last_msg:
-                            prompt = f'Клиент не ответил после того как бот отправил:\n"{last_msg[:500]}"\n\nЕсли topic: {topic or "неизвестно"}.\n\nОтправь клиенту мягкое напоминание, 1-2 предложения. Не дави, не продавай агрессивно. Например: «Не нашли то, что искали? Я на связи, если появятся вопросы.»'
-                        else:
-                            prompt = "Отправь клиенту мягкое напоминание, 1-2 предложения. Не дави, не продавай агрессивно."
+                pending = await db.get_pending_reminders()
+                for user_id, topic, last_msg, intervals in pending:
+                    if user_id == 1696951195:
+                        continue
+                    labels = {
+                        "15min": "15 минут",
+                        "3h": "3 часа",
+                        "1d": "1 день",
+                    }
+                    names = [labels[i] for i in intervals]
+                    if last_msg:
+                        prompt = f'Клиент не ответил после того как бот отправил:\n"{last_msg[:500]}"\n\nТема: {topic or "неизвестно"}.\nПрошло: {", ".join(names)}.\n\nОтправь клиенту мягкое напоминание, 1-2 предложения. Не дави, не продавай агрессивно. Например: «Не нашли то, что искали? Я на связи, если появятся вопросы.»'
+                    else:
+                        prompt = "Отправь клиенту мягкое напоминание, 1-2 предложения. Не дави, не продавай агрессивно."
 
-                        response = await get_ai_service().get_response(
-                            prompt, [], user_id, skip_search=True
-                        )
-                        response = response.replace("\\n\\n", "\n\n").replace(
-                            "\\n", "\n"
-                        )
-                        try:
-                            await bot.send_message(user_id, response[:500])
+                    response = await get_ai_service().get_response(
+                        prompt, [], user_id, skip_search=True
+                    )
+                    response = response.replace("\\n\\n", "\n\n").replace(
+                        "\\n", "\n"
+                    )
+                    try:
+                        await bot.send_message(user_id, response[:500])
+                        for interval in intervals:
                             await db.mark_reminder_sent(user_id, interval)
-                        except Exception:
-                            pass
+                    except Exception:
+                        pass
         except Exception as e:
             logger.error(f"Ошибка воркера напоминаний: {e}")
         await asyncio.sleep(REMINDER_CHECK_PERIOD)
