@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import re
 from typing import Any, Dict, Optional
 
 import httpx
@@ -72,8 +73,28 @@ class MaxBot:
         response.raise_for_status()
         return response.json()
 
+    @staticmethod
+    def _extract_urls(text: str) -> list[str]:
+        pattern = r'(?:https?://|www\.)[^\s\)\]\>"]+'
+        return list(set(re.findall(pattern, text)))
+
+    @staticmethod
+    def _clean_url_markdown(text: str) -> str:
+        text = re.sub(r'\*\*(https?://[^\*\s]+)\*\*', r'\1', text)
+        text = re.sub(r'__(https?://[^\s]+)__', r'\1', text)
+        return text
+
     async def send_message(self, chat_id: int, text: str, **kwargs) -> Dict[str, Any]:
+        text = self._clean_url_markdown(text)
         payload: dict[str, Any] = {"text": text}
+        urls = self._extract_urls(text)
+        if urls:
+            attachments = []
+            for url in urls[:5]:
+                attachments.append(
+                    {"type": "share", "payload": {"url": url}}
+                )
+            payload["attachments"] = attachments
         params: dict[str, Any] = {}
         if chat_id > 0:
             params["user_id"] = chat_id
