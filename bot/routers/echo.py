@@ -634,7 +634,9 @@ async def ai_handler(message: Message, bot: Bot) -> None:
                         conversation_history.append(
                             {"role": "assistant", "content": msg.bot_response}
                         )
-                thinking = await message.answer("Думаю...")
+                thinking = None
+                if not getattr(message.bot, "is_max", False):
+                    thinking = await message.answer("Думаю...")
                 follow_up = await get_ai_service().get_response(
                     f"Пользователь смотрит диван {first.name}. Расскажи коротко про цену, наличие в салонах Тюмени и почему именно эту модель стоит выбрать. Отвечай коротко, 1-2 абзаца.",
                     conversation_history,
@@ -644,7 +646,8 @@ async def ai_handler(message: Message, bot: Bot) -> None:
                 follow_up = follow_up.replace("\\n\\n", "\n\n").replace("\\n", "\n")
                 follow_up = clean_html(follow_up)
                 await message.answer(follow_up)
-                await thinking.delete()
+                if thinking is not None:
+                    await thinking.delete()
                 try:
                     await db.save_message(
                         user_id=user_id,
@@ -687,7 +690,9 @@ async def ai_handler(message: Message, bot: Bot) -> None:
                 {"role": "assistant", "content": msg.bot_response}
             )
 
-    thinking_msg = await message.answer("Думаю...")
+    thinking_msg = None
+    if not getattr(message.bot, "is_max", False):
+        thinking_msg = await message.answer("Думаю...")
     logger.info("Получение ответа от AI...")
     response = await get_ai_service().get_response(
         user_text, conversation_history, user_id, first_name=first_name
@@ -698,7 +703,8 @@ async def ai_handler(message: Message, bot: Bot) -> None:
     logger.info(f"Отправка ответа: {response[:100]}...")
     await message.answer(response)
 
-    await thinking_msg.delete()
+    if thinking_msg is not None:
+        await thinking_msg.delete()
 
     user_text_lower = user_text.lower()
 

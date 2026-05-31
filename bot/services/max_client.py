@@ -42,6 +42,7 @@ class MaxBot:
         self.username: str | None = None
         self.base_url = "https://platform-api.max.ru"
         self.client = httpx.AsyncClient(timeout=30.0)
+        self.is_max = True
 
     async def __call__(self, method) -> Any:
         """Handle aiogram TelegramMethod calls (e.g. from message.answer())."""
