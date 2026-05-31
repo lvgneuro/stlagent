@@ -10,13 +10,18 @@ logger = logging.getLogger(__name__)
 
 class MaxMessage:
     """Fake aiogram Message-like object returned by MaxBot."""
-    def __init__(self, data: dict[str, Any], chat_id: int = 0):
+    def __init__(self, data: dict[str, Any], chat_id: int = 0, bot: MaxBot | None = None):
         self.data = data
         self.chat = Chat(id=chat_id, type="private")
-        self.message_id = data.get("message_id", 0)
+        msg = data.get("message", {})
+        body = msg.get("body", {})
+        self.message_id = body.get("mid", "")
         self.from_user = None
+        self._bot = bot
 
     async def delete(self) -> dict[str, Any]:
+        if self._bot and self.message_id:
+            return await self._bot.delete_message(self.message_id)
         return {"ok": True}
 
     async def edit_text(self, text: str, **kwargs) -> "MaxMessage":
@@ -43,15 +48,15 @@ class MaxBot:
         method_name = type(method).__name__
         if method_name == "SendMessage":
             result = await self.send_message(method.chat_id, method.text)
-            return MaxMessage(result, chat_id=method.chat_id)
+            return MaxMessage(result, chat_id=method.chat_id, bot=self)
         if method_name == "SendPhoto":
             result = await self.send_photo(method.chat_id, method.photo, caption=getattr(method, "caption", None))
-            return MaxMessage(result, chat_id=method.chat_id)
+            return MaxMessage(result, chat_id=method.chat_id, bot=self)
         if method_name == "DeleteMessage":
-            return {"ok": True}
+            return await self.delete_message(method.message_id)
         if method_name == "CopyMessage":
             result = await self.send_message(method.chat_id, getattr(method, "caption", "") or "")
-            return MaxMessage(result, chat_id=method.chat_id)
+            return MaxMessage(result, chat_id=method.chat_id, bot=self)
         logger.warning(f"MaxBot.__call__: unsupported method {method_name}")
         return {"ok": False, "error": f"unsupported method {method_name}"}
 
@@ -105,6 +110,13 @@ class MaxBot:
             return await self._request(
                 "POST", "/messages", params=params, data=data, files=files
             )
+
+    async def delete_message(self, message_id: str) -> Dict[str, Any]:
+        try:
+            return await self._request("DELETE", f"/messages/{message_id}")
+        except httpx.HTTPStatusError as e:
+            logger.warning(f"MAX delete_message failed: {e}")
+            return {"ok": False, "error": str(e)}
 
     async def download(self, file_obj, destination: Optional[str] = None) -> bytes | None:
         logger.warning(f"download called but MAX file download not supported: {file_obj}")

@@ -346,6 +346,7 @@ class AIService:
         conversation_history: list | None = None,
         user_id: int = 0,
         first_name: str | None = None,
+        skip_search: bool = False,
     ) -> str:
         if not self._client:
             return "⚠️ Бот не настроен: отсутствует ANTHROPIC_API_KEY"
@@ -571,7 +572,7 @@ class AIService:
             ) or bool(urls)
 
             search_result = ""
-            if needs_search or is_general_topic:
+            if not skip_search and (needs_search or is_general_topic):
                 try:
                     from bot.services.search_service import search_service
 

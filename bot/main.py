@@ -112,7 +112,7 @@ async def reminder_worker(bot: Bot) -> None:
                             prompt = "Отправь клиенту мягкое напоминание, 1-2 предложения. Не дави, не продавай агрессивно."
 
                         response = await get_ai_service().get_response(
-                            prompt, [], user_id
+                            prompt, [], user_id, skip_search=True
                         )
                         response = response.replace("\\n\\n", "\n\n").replace(
                             "\\n", "\n"
