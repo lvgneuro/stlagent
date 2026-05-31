@@ -90,7 +90,7 @@ async def daily_sofa_indexing(bot: Bot) -> None:
         await _run_indexing(bot)
 
 
-REMINDER_CHECK_PERIOD = 300
+REMINDER_CHECK_PERIOD = 3600
 
 
 async def reminder_worker(bot: Bot) -> None:
