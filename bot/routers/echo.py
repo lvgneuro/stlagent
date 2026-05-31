@@ -623,7 +623,7 @@ async def ai_handler(message: Message, bot: Bot) -> None:
                         found_sofas[:5], user_text[:30]
                     )
                 await message.answer(response_text)
-                history = await db.get_user_messages(user_id, limit=20)
+    history = await db.get_user_messages(user_id, limit=4)
                 conversation_history = []
                 for msg in reversed(history):
                     if msg.user_message and msg.user_message.strip():
