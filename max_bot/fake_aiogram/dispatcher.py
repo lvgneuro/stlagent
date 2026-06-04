@@ -2,10 +2,13 @@ from __future__ import annotations
 
 from .router import Router
 
+
 class Dispatcher:
     def __init__(self, bot=None):
         self.bot = bot
-        self.router = Router()  # We'll use a single router for simplicity; but we can have multiple.
+        self.router = (
+            Router()
+        )  # We'll use a single router for simplicity; but we can have multiple.
         # Actually, aiogram's Dispatcher can include multiple routers.
         self.routers = []
 
@@ -14,7 +17,7 @@ class Dispatcher:
 
     async def feed_update(self, bot, update):
         # We'll only handle message updates for now.
-        message = getattr(update, 'message', None)
+        message = getattr(update, "message", None)
         if message is None:
             return
         # Process the message through each router in order.

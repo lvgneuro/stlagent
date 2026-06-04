@@ -74,7 +74,9 @@ def search_catalog(query: str) -> str:
 
     lines = catalog.split("\n")
     matched: list[str] = []
-    inside_brand_section = brand_filter is None  # if no brand filter, accept all sections
+    inside_brand_section = (
+        brand_filter is None
+    )  # if no brand filter, accept all sections
 
     for line in lines:
         stripped = line.strip()

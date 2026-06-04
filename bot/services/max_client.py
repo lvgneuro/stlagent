@@ -136,7 +136,7 @@ class MaxBot:
     async def delete_message(self, message_id: str) -> Dict[str, Any]:
         try:
             return await self._request(
-                "PUT", f"/messages", params={"message_id": message_id}, json={"text": ""}
+                "PUT", "/messages", params={"message_id": message_id}, json={"text": ""}
             )
         except httpx.HTTPStatusError as e:
             logger.warning(f"MAX delete_message failed: {e}")

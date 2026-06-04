@@ -110,7 +110,9 @@ def is_sofa_request(text: str) -> bool:
 async def command_start_handler(message: Message) -> None:
     user_id = message.from_user.id if message.from_user else 0
     logger.info(f"Получен /start от {user_id}")
-    await message.answer("Интеллектуальный помощник по подбору мягкой мебели готов немедленно прийти к Вам на помощь!")
+    await message.answer(
+        "Интеллектуальный помощник по подбору мягкой мебели готов немедленно прийти к Вам на помощь!"
+    )
 
 
 @router.message(Command("обновить_каталог", prefix="/"))
@@ -193,7 +195,7 @@ async def db_fix_handler(message: Message) -> None:
             )
             conn.execute(
                 text(
-                    "CREATE TABLE IF NOT EXISTS conversations (id SERIAL PRIMARY KEY, user_id BIGINT NOT NULL, last_message_at TIMESTAMP DEFAULT NOW(), reminder_sent_15min INTEGER DEFAULT 0, reminder_sent_3h INTEGER DEFAULT 0, reminder_sent_1d INTEGER DEFAULT 0, last_reminder_at TIMESTAMP, topic TEXT, last_bot_message TEXT, created_at TIMESTAMP DEFAULT NOW())"
+                    "CREATE TABLE IF NOT EXISTS conversations (id SERIAL PRIMARY KEY, user_id BIGINT NOT NULL, last_message_at TIMESTAMP DEFAULT NOW(), topic TEXT, last_bot_message TEXT, created_at TIMESTAMP DEFAULT NOW())"
                 )
             )
             conn.commit()
@@ -616,7 +618,7 @@ async def ai_handler(message: Message, bot: Bot) -> None:
                         found_sofas[:5], user_text[:30]
                     )
                 await message.answer(response_text)
-                history = await db.get_user_messages(user_id, limit=20)
+                history = await db.get_user_messages(user_id, limit=5)
                 conversation_history = []
                 for msg in reversed(history):
                     if msg.user_message and msg.user_message.strip():
@@ -669,7 +671,7 @@ async def ai_handler(message: Message, bot: Bot) -> None:
             )
             return
 
-    history = await db.get_user_messages(user_id, limit=20)
+    history = await db.get_user_messages(user_id, limit=5)
     conversation_history = []
     for msg in reversed(history):
         if msg.user_message and msg.user_message.strip():
@@ -700,7 +702,17 @@ async def ai_handler(message: Message, bot: Bot) -> None:
     phone_match = phone_pattern.search(user_text)
     has_phone_keyword = any(
         word in user_text_lower
-        for word in ["номер", "телефон", "звоните", "позвонить", "позвонит", "свяжитесь", "+7", "8-9", "8 9"]
+        for word in [
+            "номер",
+            "телефон",
+            "звоните",
+            "позвонить",
+            "позвонит",
+            "свяжитесь",
+            "+7",
+            "8-9",
+            "8 9",
+        ]
     )
 
     if phone_match and has_phone_keyword:

@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 import os
 from dataclasses import dataclass
-from datetime import datetime, timedelta
+from datetime import datetime
 
 from sqlalchemy import (
     Column,
@@ -80,10 +80,6 @@ class ConversationModel(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     user_id = Column(BigInteger, nullable=False, index=True)
     last_message_at = Column(DateTime, default=datetime.now, index=True)
-    reminder_sent_15min = Column(Integer, default=0)
-    reminder_sent_3h = Column(Integer, default=0)
-    reminder_sent_1d = Column(Integer, default=0)
-    last_reminder_at = Column(DateTime, nullable=True)
     topic = Column(Text, nullable=True)
     last_bot_message = Column(Text, nullable=True)
     last_interest = Column(Text, nullable=True)
@@ -131,9 +127,6 @@ class Conversation:
     topic: str | None
     last_bot_message: str | None
     last_message_at: datetime
-    reminder_sent_15min: int
-    reminder_sent_3h: int
-    reminder_sent_1d: int
 
 
 class Database:
@@ -544,10 +537,6 @@ class Database:
             conv = result.scalar_one_or_none()
             if conv:
                 conv.last_message_at = datetime.now()
-                conv.reminder_sent_15min = 0
-                conv.reminder_sent_3h = 0
-                conv.reminder_sent_1d = 0
-                conv.last_reminder_at = None
                 if topic:
                     conv.topic = topic
                 if last_bot_message:
@@ -563,70 +552,6 @@ class Database:
                 )
                 session.add(conv)
             await session.commit()
-
-    async def get_pending_reminders(
-        self, intervals: list[str]
-    ) -> list[tuple[int, str, str | None]]:
-        async with self._session_factory() as session:
-            from sqlalchemy import select, and_
-
-            now = datetime.now()
-            results = []
-
-            if "15min" in intervals:
-                delta = timedelta(minutes=15)
-                stmt = select(ConversationModel).where(
-                    and_(
-                        ConversationModel.reminder_sent_15min == 0,
-                        (now - ConversationModel.last_message_at) >= delta,
-                    )
-                )
-                result = await session.execute(stmt)
-                for conv in result.scalars().all():
-                    results.append((conv.user_id, conv.topic, conv.last_bot_message))
-
-            if "3h" in intervals:
-                delta = timedelta(hours=3)
-                stmt = select(ConversationModel).where(
-                    and_(
-                        ConversationModel.reminder_sent_3h == 0,
-                        (now - ConversationModel.last_message_at) >= delta,
-                    )
-                )
-                result = await session.execute(stmt)
-                for conv in result.scalars().all():
-                    results.append((conv.user_id, conv.topic, conv.last_bot_message))
-
-            if "1d" in intervals:
-                delta = timedelta(days=1)
-                stmt = select(ConversationModel).where(
-                    and_(
-                        ConversationModel.reminder_sent_1d == 0,
-                        (now - ConversationModel.last_message_at) >= delta,
-                    )
-                )
-                result = await session.execute(stmt)
-                for conv in result.scalars().all():
-                    results.append((conv.user_id, conv.topic, conv.last_bot_message))
-
-            return results
-
-    async def mark_reminder_sent(self, user_id: int, interval: str) -> None:
-        async with self._session_factory() as session:
-            from sqlalchemy import select
-
-            stmt = select(ConversationModel).where(ConversationModel.user_id == user_id)
-            result = await session.execute(stmt)
-            conv = result.scalar_one_or_none()
-            if conv:
-                if interval == "15min":
-                    conv.reminder_sent_15min = 1
-                elif interval == "3h":
-                    conv.reminder_sent_3h = 1
-                elif interval == "1d":
-                    conv.reminder_sent_1d = 1
-                conv.last_reminder_at = datetime.now()
-                await session.commit()
 
     async def get_user_interest(self, user_id: int) -> str | None:
         async with self._session_factory() as session:

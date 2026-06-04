@@ -6,9 +6,17 @@ from . import aiogram_html as html
 
 # Expose for star imports
 __all__ = [
-    "Router", "Bot", "F", "CommandStart", "Command",
-    "Message", "FSInputFile", "ReplyKeyboardMarkup", "KeyboardButton",
-    "Dispatcher", "html"
+    "Router",
+    "Bot",
+    "F",
+    "CommandStart",
+    "Command",
+    "Message",
+    "FSInputFile",
+    "ReplyKeyboardMarkup",
+    "KeyboardButton",
+    "Dispatcher",
+    "html",
 ]
 
 # We need to define Router here as well.

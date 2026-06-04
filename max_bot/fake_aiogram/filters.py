@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
+
 class CommandStart:
     def __init__(self, ignore_case: bool = False, ignore_prefix: bool = False):
         self.ignore_case = ignore_case
@@ -14,8 +15,15 @@ class CommandStart:
         prefix = "" if self.ignore_prefix else "/"
         return text.startswith(prefix + "start")
 
+
 class Command:
-    def __init__(self, *commands, ignore_case: bool = False, ignore_prefix: bool = False, prefix: str = '/'):
+    def __init__(
+        self,
+        *commands,
+        ignore_case: bool = False,
+        ignore_prefix: bool = False,
+        prefix: str = "/",
+    ):
         self.commands = set(commands)
         self.ignore_case = ignore_case
         self.ignore_prefix = ignore_prefix
@@ -26,10 +34,11 @@ class Command:
         if self.ignore_case:
             text = text.lower()
         if not self.ignore_prefix and text.startswith(self.prefix):
-            text = text[len(self.prefix):]
+            text = text[len(self.prefix) :]
         # take first word
         cmd = text.split()[0] if text else ""
         return cmd in self.commands
+
 
 class F:
     class _Filter:
@@ -47,9 +56,15 @@ class F:
             if self.op == "!=":
                 return val != self.value
             if self.op == "in":
-                return val in self.value if isinstance(val, (str, list, tuple)) else False
+                return (
+                    val in self.value if isinstance(val, (str, list, tuple)) else False
+                )
             if self.op == "not_in":
-                return val not in self.value if isinstance(val, (str, list, tuple)) else True
+                return (
+                    val not in self.value
+                    if isinstance(val, (str, list, tuple))
+                    else True
+                )
             if self.op == "contains":
                 return isinstance(val, str) and self.value in val
             # add more ops if needed
@@ -57,6 +72,7 @@ class F:
 
         def __and__(self, other):
             return AndFilter([self, other])
+
         def __or__(self, other):
             return OrFilter([self, other])
 
@@ -65,6 +81,7 @@ class F:
     contact = _Filter("contact")
     photo = _Filter("photo")
     content_type = _Filter("content_type")
+
 
 class AndFilter:
     def __init__(self, filters):
@@ -75,6 +92,7 @@ class AndFilter:
             if not await f(obj):
                 return False
         return True
+
 
 class OrFilter:
     def __init__(self, filters):

@@ -61,7 +61,19 @@ async def parse_oprime() -> dict[str, str]:
 
                     # Check if link has visible name that matches a known model
                     text = link.get_text(strip=True).lower()
-                    if text and text not in ["на ножках", "раскладные", "п-образные", "модульные", "угловые", "прямые", "со спальным местом", "с бельевым коробом", "все фильтры", "сортировать", "показать еще"]:
+                    if text and text not in [
+                        "на ножках",
+                        "раскладные",
+                        "п-образные",
+                        "модульные",
+                        "угловые",
+                        "прямые",
+                        "со спальным местом",
+                        "с бельевым коробом",
+                        "все фильтры",
+                        "сортировать",
+                        "показать еще",
+                    ]:
                         models[text] = full_url
 
             logger.info(f"Parsed OPRIME: {len(models)} models found")

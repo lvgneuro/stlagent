@@ -568,7 +568,7 @@ class Database:
         self,
     ) -> list[tuple[int, str, str | None, list[str]]]:
         async with self._session_factory() as session:
-            from sqlalchemy import select, and_
+            from sqlalchemy import select
 
             now = datetime.now()
             stmt = select(ConversationModel).where(

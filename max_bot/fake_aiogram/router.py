@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Any
 import inspect
 
+
 class Router:
     def __init__(self):
         self.message_handlers = []  # each element: (filters, handler)
@@ -12,6 +13,7 @@ class Router:
         def decorator(func):
             self.message_handlers.append((filters, func))
             return func
+
         return decorator
 
     # We'll also add a callback_query decorator for completeness, though not used in echo router.
@@ -19,6 +21,7 @@ class Router:
         def decorator(func):
             # We'll store them similarly if needed
             return func
+
         return decorator
 
     async def process_message(self, message: Any, bot: Any):
@@ -30,7 +33,7 @@ class Router:
             # Check all filters
             ok = True
             for f in filters:
-                if hasattr(f, '__call__'):
+                if hasattr(f, "__call__"):
                     # If it's a filter instance (like CommandStart, F.text, etc.)
                     if not await f(message):
                         ok = False
@@ -51,12 +54,12 @@ class Router:
                     # Check if handler expects a bot argument
                     sig = inspect.signature(handler)
                     params = sig.parameters
-                    if 'bot' in params:
+                    if "bot" in params:
                         await handler(message, bot=bot)
-                    elif len(params) >= 2 and any('bot' in p.lower() for p in params):
+                    elif len(params) >= 2 and any("bot" in p.lower() for p in params):
                         # Try to find a parameter that looks like bot
                         for p in params:
-                            if 'bot' in p.lower():
+                            if "bot" in p.lower():
                                 await handler(message, **{p: bot})
                                 break
                         else:
@@ -71,5 +74,6 @@ class Router:
                         raise
                 return  # Assume one handler is enough; in aiogram, the first matching handler is used.
         # If no handler matched, we do nothing (or could log).
+
 
 # We also need to expose the Router class in the __init__.py, which we already did.

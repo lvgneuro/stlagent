@@ -46,7 +46,10 @@ CATALOG_TOOL = {
     "input_schema": {
         "type": "object",
         "properties": {
-            "query": {"type": "string", "description": "Search query — brand name, model name, or category (e.g. КАЛИНКА К25, Oprime диван, Rivalli, Andrea кровать, матрас LineaFlex)"}
+            "query": {
+                "type": "string",
+                "description": "Search query — brand name, model name, or category (e.g. КАЛИНКА К25, Oprime диван, Rivalli, Andrea кровать, матрас LineaFlex)",
+            }
         },
         "required": ["query"],
     },
@@ -295,12 +298,31 @@ class AIService:
                 )
 
             search_indicators = [
-                "погода", "погод", "прогноз",
-                "новости", "сегодня", "сейчас", "вчера", "завтра",
-                "курс", "гороскоп", "режим работы", "график работы",
-                "найти", "узнать", "произошло", "случилось",
-                "магазин", "купить", "адрес", "где находится",
-                "салон", "торговый", "время", "дата", "цена",
+                "погода",
+                "погод",
+                "прогноз",
+                "новости",
+                "сегодня",
+                "сейчас",
+                "вчера",
+                "завтра",
+                "курс",
+                "гороскоп",
+                "режим работы",
+                "график работы",
+                "найти",
+                "узнать",
+                "произошло",
+                "случилось",
+                "магазин",
+                "купить",
+                "адрес",
+                "где находится",
+                "салон",
+                "торговый",
+                "время",
+                "дата",
+                "цена",
             ]
             image_triggers = [
                 "нарисуй",
@@ -370,9 +392,23 @@ class AIService:
             link_request = any(
                 word in user_lower
                 for word in [
-                    "ссылку", "ссылка", "сайт", "каталог", "покажи", "модель", "модели",
-                    "есть", "можешь", "дай", "получить", "найти", "показать", "адрес",
-                    "телефон", "контакты", "получить"
+                    "ссылку",
+                    "ссылка",
+                    "сайт",
+                    "каталог",
+                    "покажи",
+                    "модель",
+                    "модели",
+                    "есть",
+                    "можешь",
+                    "дай",
+                    "получить",
+                    "найти",
+                    "показать",
+                    "адрес",
+                    "телефон",
+                    "контакты",
+                    "получить",
                 ]
             )
             # If model mentioned or link requested for known factories - trigger furniture context
@@ -419,7 +455,18 @@ class AIService:
 
             # Check context from previous messages if no furniture detected yet
             if not is_tyumen_furniture and not is_general_topic and context_messages:
-                furniture_context_keywords = ["диван", "кровать", "матрас", "кресло", "калинка", "опрайм", "ривалли", "андреа", "lineaflex", "линеафлекс"]
+                furniture_context_keywords = [
+                    "диван",
+                    "кровать",
+                    "матрас",
+                    "кресло",
+                    "калинка",
+                    "опрайм",
+                    "ривалли",
+                    "андреа",
+                    "lineaflex",
+                    "линеафлекс",
+                ]
                 recent_context = " ".join(context_messages[-5:]).lower()
                 if any(kw in recent_context for kw in furniture_context_keywords):
                     is_tyumen_furniture = True
@@ -437,14 +484,20 @@ class AIService:
                 try:
                     from bot.services.search_service import search_service
 
-                    logger.info(f"Imported search_service: {type(search_service)}, dir: {[x for x in dir(search_service) if not x.startswith('_')]}")
-                    if hasattr(search_service, 'search'):
-                        result = await asyncio.to_thread(search_service.search, user_message)
+                    logger.info(
+                        f"Imported search_service: {type(search_service)}, dir: {[x for x in dir(search_service) if not x.startswith('_')]}"
+                    )
+                    if hasattr(search_service, "search"):
+                        result = await asyncio.to_thread(
+                            search_service.search, user_message
+                        )
                         if result and result.strip():
                             search_result = result
                             logger.info(f"Результат поиска: {search_result[:200]}...")
                     else:
-                        logger.warning(f"search_service не имеет метода search, тип: {type(search_service)}")
+                        logger.warning(
+                            f"search_service не имеет метода search, тип: {type(search_service)}"
+                        )
                 except Exception as e:
                     logger.warning(f"Ошибка поиска: {e}")
 
@@ -496,7 +549,9 @@ class AIService:
                 )
                 return response
             if any(w in user_lower for w in ["21", "к21"]):
-                return "Калинка К21: https://mebel-kalinka.ru/katalog/item/kalinka_21_1/"
+                return (
+                    "Калинка К21: https://mebel-kalinka.ru/katalog/item/kalinka_21_1/"
+                )
             if any(w in user_lower for w in ["25", "к25"]):
                 return "Калинка К25: https://mebel-kalinka.ru/katalog/item/kalinka_25/"
             if any(w in user_lower for w in ["26", "к26"]):
@@ -506,7 +561,9 @@ class AIService:
             if any(w in user_lower for w in ["29", "к29"]):
                 return "Калинка К29: https://mebel-kalinka.ru/katalog/item/kalinka_29/"
             if any(w in user_lower for w in ["30", "к30"]):
-                return "Калинка К30: https://mebel-kalinka.ru/katalog/item/kalinka_30_1/"
+                return (
+                    "Калинка К30: https://mebel-kalinka.ru/katalog/item/kalinka_30_1/"
+                )
             if any(w in user_lower for w in ["31", "к31"]):
                 return "Калинка К31: https://mebel-kalinka.ru/katalog/item/kalinka_30/"
             if any(w in user_lower for w in ["ссылк", "сайт", "каталог"]):
@@ -603,16 +660,18 @@ class AIService:
                         result = search_catalog(query)
                         if not result:
                             result = "По вашему запросу ничего не найдено в каталоге."
-                        messages.append({
-                            "role": "user",
-                            "content": [
-                                {
-                                    "type": "tool_result",
-                                    "tool_use_id": block.id,
-                                    "content": result[:4000],
-                                }
-                            ],
-                        })
+                        messages.append(
+                            {
+                                "role": "user",
+                                "content": [
+                                    {
+                                        "type": "tool_result",
+                                        "tool_use_id": block.id,
+                                        "content": result[:4000],
+                                    }
+                                ],
+                            }
+                        )
                 response = await self._client.messages.create(
                     model="claude-sonnet-4-6",
                     max_tokens=1024,

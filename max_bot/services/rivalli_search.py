@@ -78,9 +78,7 @@ class RivalliSearch:
                 if label in target_labels and len(value.strip()) > 1:
                     parts.append(f"{label}: {value.strip()[:100]}")
         else:
-            matches = re.findall(
-                r'<div class="(left|right)">([^<]*)</div>', html
-            )
+            matches = re.findall(r'<div class="(left|right)">([^<]*)</div>', html)
             i = 0
             while i < len(matches):
                 cls, val = matches[i]

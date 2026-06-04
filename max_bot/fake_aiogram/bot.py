@@ -1,13 +1,14 @@
 from __future__ import annotations
 
+
 class Bot:
     def __init__(self, token: str = None, **kwargs):
         self.token = token
         # We'll store parse_mode if provided via default
         self.parse_mode = None
-        if 'default' in kwargs:
-            default = kwargs['default']
-            if hasattr(default, 'parse_mode'):
+        if "default" in kwargs:
+            default = kwargs["default"]
+            if hasattr(default, "parse_mode"):
                 self.parse_mode = default.parse_mode
 
     # These methods will be overridden by MaxBot via monkey-patching in main.py

@@ -52,7 +52,9 @@ class RivalliParser:
         if not self.session:
             return None
         try:
-            async with self.session.get(url, timeout=aiohttp.ClientTimeout(total=30)) as resp:
+            async with self.session.get(
+                url, timeout=aiohttp.ClientTimeout(total=30)
+            ) as resp:
                 if resp.status == 200:
                     return await resp.text()
                 logger.warning(f"Status {resp.status} for {url}")
@@ -81,8 +83,7 @@ class RivalliParser:
 
             name = slug.replace("-", " ").title()
             name_match = re.search(
-                rf'<a[^>]+href="{re.escape(match)}"[^>]*>([^<]+)</a>',
-                html
+                rf'<a[^>]+href="{re.escape(match)}"[^>]*>([^<]+)</a>', html
             )
             if name_match:
                 name = name_match.group(1).strip()
@@ -139,7 +140,9 @@ class RivalliParser:
         html = await self.fetch_page(url)
         if not html:
             return []
-        return self.extract_sofa_links(html, url.split("/")[-2] if url.endswith("/") else url.split("/")[-1])
+        return self.extract_sofa_links(
+            html, url.split("/")[-2] if url.endswith("/") else url.split("/")[-1]
+        )
 
     async def parse_sofa_page(self, url: str) -> SofaData | None:
         html = await self.fetch_page(url)
