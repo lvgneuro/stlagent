@@ -11,7 +11,10 @@ logger = logging.getLogger(__name__)
 
 class MaxMessage:
     """Fake aiogram Message-like object returned by MaxBot."""
-    def __init__(self, data: dict[str, Any], chat_id: int = 0, bot: MaxBot | None = None):
+
+    def __init__(
+        self, data: dict[str, Any], chat_id: int = 0, bot: MaxBot | None = None
+    ):
         self.data = data
         self.chat = Chat(id=chat_id, type="private")
         msg = data.get("message", {})
@@ -31,6 +34,7 @@ class MaxMessage:
 
 class Chat:
     """Minimal chat stub for MaxMessage."""
+
     def __init__(self, id: int, type: str = "private"):
         self.id = id
         self.type = type
@@ -52,12 +56,16 @@ class MaxBot:
             result = await self.send_message(method.chat_id, method.text)
             return MaxMessage(result, chat_id=method.chat_id, bot=self)
         if method_name == "SendPhoto":
-            result = await self.send_photo(method.chat_id, method.photo, caption=getattr(method, "caption", None))
+            result = await self.send_photo(
+                method.chat_id, method.photo, caption=getattr(method, "caption", None)
+            )
             return MaxMessage(result, chat_id=method.chat_id, bot=self)
         if method_name == "DeleteMessage":
             return await self.delete_message(method.message_id)
         if method_name == "CopyMessage":
-            result = await self.send_message(method.chat_id, getattr(method, "caption", "") or "")
+            result = await self.send_message(
+                method.chat_id, getattr(method, "caption", "") or ""
+            )
             return MaxMessage(result, chat_id=method.chat_id, bot=self)
         logger.warning(f"MaxBot.__call__: unsupported method {method_name}")
         return {"ok": False, "error": f"unsupported method {method_name}"}
@@ -69,7 +77,10 @@ class MaxBot:
         response = await self.client.request(method, url, headers=headers, **kwargs)
         body = response.text
         if not response.is_success:
-            print(f"MAX API ERROR {response.status_code} {endpoint}: {body[:500]}", flush=True)
+            print(
+                f"MAX API ERROR {response.status_code} {endpoint}: {body[:500]}",
+                flush=True,
+            )
         response.raise_for_status()
         return response.json()
 
@@ -80,8 +91,8 @@ class MaxBot:
 
     @staticmethod
     def _clean_url_markdown(text: str) -> str:
-        text = re.sub(r'\*\*(https?://[^\*\s]+)\*\*', r'\1', text)
-        text = re.sub(r'__(https?://[^\s]+)__', r'\1', text)
+        text = re.sub(r"\*\*(https?://[^\*\s]+)\*\*", r"\1", text)
+        text = re.sub(r"__(https?://[^\s]+)__", r"\1", text)
         return text
 
     async def send_message(self, chat_id: int, text: str, **kwargs) -> Dict[str, Any]:
@@ -91,9 +102,7 @@ class MaxBot:
         if urls:
             attachments = []
             for url in urls[:5]:
-                attachments.append(
-                    {"type": "share", "payload": {"url": url}}
-                )
+                attachments.append({"type": "share", "payload": {"url": url}})
             payload["attachments"] = attachments
         params: dict[str, Any] = {}
         if chat_id > 0:
@@ -142,8 +151,12 @@ class MaxBot:
             logger.warning(f"MAX delete_message failed: {e}")
             return {"ok": False, "error": str(e)}
 
-    async def download(self, file_obj, destination: Optional[str] = None) -> bytes | None:
-        logger.warning(f"download called but MAX file download not supported: {file_obj}")
+    async def download(
+        self, file_obj, destination: Optional[str] = None
+    ) -> bytes | None:
+        logger.warning(
+            f"download called but MAX file download not supported: {file_obj}"
+        )
         return b""
 
     async def get_file(self, file_id: str) -> bytes:
