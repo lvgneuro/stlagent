@@ -712,23 +712,12 @@ async def ai_handler(message: Message, bot: Bot) -> None:
         r"(\+?7|8)[\s\-]?\(?\d{3}\)?[\s\-]?\d{3}[\s\-]?\d{2}[\s\-]?\d{2}"
     )
     phone_match = phone_pattern.search(user_text)
-    has_phone_keyword = any(
-        word in user_text_lower
-        for word in [
-            "номер",
-            "телефон",
-            "звоните",
-            "позвонить",
-            "позвонит",
-            "свяжитесь",
-            "+7",
-            "8-9",
-            "8 9",
-        ]
-    )
+    # Дополнительно: ищем "голый" номер начиная с 7 без +
+    bare_phone_pattern = re.compile(r"(?<!\d)(7\d{10})(?!\d)")
+    bare_phone_match = bare_phone_pattern.search(user_text)
 
-    if phone_match and has_phone_keyword:
-        phone = phone_match.group()
+    if phone_match or bare_phone_match:
+        phone = (phone_match or bare_phone_match).group()
         username_tg = message.from_user.username if message.from_user else None
         tg_link = f"@{username_tg}" if username_tg else "нет TG username"
 
