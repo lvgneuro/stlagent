@@ -82,6 +82,8 @@ def is_sofa_request(text: str) -> bool:
         "лерой",
         "люксор",
         "мадрид",
+        "манхэттен",
+        "mankhetten",
         "майя",
         "манхэттен",
         "маскот",
@@ -645,7 +647,7 @@ async def ai_handler(message: Message, bot: Bot) -> None:
                 if not getattr(message.bot, "is_max", False):
                     thinking = await message.answer("Думаю...")
                 follow_up = await get_ai_service().get_response(
-                    f"Пользователь смотрит диван {first.name}. Расскажи коротко про цену, наличие в салонах Тюмени и почему именно эту модель стоит выбрать. Отвечай коротко, 1-2 абзаца.",
+                    f"Пользователь смотрит диван {first.name}. Это модель из каталога Rivalli — она ЕСТЬ в нашем ассортименте (данные загружены с сайта производителя). Расскажи коротко про цену, наличие в салонах Тюмени и почему именно эту модель стоит выбрать. Отвечай коротко, 1-2 абзаца.",
                     conversation_history,
                     user_id,
                     first_name=first_name,
