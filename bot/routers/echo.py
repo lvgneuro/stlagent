@@ -598,17 +598,24 @@ async def ai_handler(message: Message, bot: Bot) -> None:
         if sofa_count > 0:
             search_words = query_lower.split()
             keywords = [w for w in search_words if len(w) > 3]
+            generic_words = {"диван", "какой", "фабрике", "делают", "сколько", "стоит",
+                             "цена", "наличие", "салонах", "тюмени", "выбрать"}
+            specific_keywords = [w for w in keywords if w not in generic_words]
 
             if keywords:
                 found_sofas = []
                 for sofa in all_sofas:
                     name_lower = sofa.name.lower()
-                    if any(kw in name_lower for kw in keywords):
-                        found_sofas.append(sofa)
-                    elif sofa.description and any(
-                        kw in sofa.description.lower() for kw in keywords
-                    ):
-                        found_sofas.append(sofa)
+                    if specific_keywords:
+                        if any(kw in name_lower for kw in specific_keywords):
+                            found_sofas.append(sofa)
+                    else:
+                        if any(kw in name_lower for kw in keywords):
+                            found_sofas.append(sofa)
+                        elif sofa.description and any(
+                            kw in sofa.description.lower() for kw in keywords
+                        ):
+                            found_sofas.append(sofa)
 
                 logger.info(f"Найдено {len(found_sofas)} диванов по ключевым словам")
 
